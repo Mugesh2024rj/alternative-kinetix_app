@@ -1,0 +1,121 @@
+tasks and work flows:
+If you don’t set a clear workflow early, team projects usually become chaos—duplicate work, broken code, last-minute stress. So let’s structure this properly from day one.
+
+🚀 Team Workflow for Your Physiotherapy Project
+👥 1. Define Roles (very important)
+
+Even if everyone codes, assign primary responsibility:
+
+Frontend Lead → React UI, dashboards
+Backend Lead → APIs, logic (Node.js / Django)
+Database Lead → schema, queries (PostgreSQL)
+QA / Testing + Docs → testing + report + presentation
+
+👉 Use:
+
+GitHub for code collaboration
+🔄 2. Development Workflow (simple & effective)
+Step 1: Plan features
+
+Break your project into modules:
+
+Login system
+Staff tracking
+Performance analytics
+Reports dashboard
+Step 2: Use Task Board
+
+Use:
+
+Trello or
+Jira
+
+Create columns:
+
+To Do
+In Progress
+Done
+
+👉 Assign tasks to each member
+
+Step 3: Git Workflow (must follow 🔥)
+
+Use this structure in GitHub:
+
+main → final working code
+dev → testing branch
+feature/* → each person’s work
+
+Example:
+
+feature/login
+feature/dashboard
+
+👉 Rule:
+
+Never push directly to main
+🔁 3. Daily Workflow (keep it simple)
+
+Each day:
+
+Pull latest code
+Work on your feature
+Push to your branch
+Create Pull Request
+Team reviews → merge
+🧪 4. Integration Workflow (important)
+
+Every 2–3 days:
+
+Combine frontend + backend + database
+Test full system
+
+👉 Avoid “everything works separately but not together” problem
+
+🗂️ 5. Folder Structure (clean project)
+project/
+ ├── frontend/ (React)
+ ├── backend/ (Node.js)
+ ├── database/ (SQL files)
+ ├── docs/ (report, diagrams)
+📊 6. Weekly Plan (easy timeline)
+Week 1
+Requirements + UI design
+Database schema
+Week 2
+Backend APIs
+Basic frontend
+Week 3
+Integration
+Dashboard + analytics
+Week 4
+Testing
+Final report + presentation
+🧠 7. Communication (don’t ignore this)
+
+Use:
+
+WhatsApp (quick updates)
+Google Meet (weekly meeting)
+
+👉 Daily 5–10 min check:
+
+What you did
+What you will do
+Any problem
+⚠️ Common Mistakes (avoid these)
+
+❌ Everyone doing same work
+❌ No version control
+❌ Last-minute integration
+❌ No clear ownership
+
+🏁 Final Simple Workflow (remember this)
+
+👉 Plan → Assign → Develop → Review → Integrate → Test
+
+💡 Pro Tip (to impress faculty)
+
+Say this:
+
+“We followed Agile methodology with Git-based version control and sprint-based development.”
