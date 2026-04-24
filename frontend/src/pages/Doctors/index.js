@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { UserCheck, Home, CalendarDays, Clock, Star, Plus, Search, Filter, Check, X, Eye } from 'lucide-react';
+import { UserCheck, Home, CalendarDays, Clock, Star, Plus, Search, Check, X, Eye, Users } from 'lucide-react';
 import Layout from '../../components/layout/Layout';
 import MetricCard from '../../components/ui/MetricCard';
 import Modal from '../../components/ui/Modal';
