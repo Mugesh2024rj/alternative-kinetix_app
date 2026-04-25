@@ -1,12 +1,109 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, UserCheck, ArrowLeftRight, Star, Activity, Home, Building2, ClipboardList } from 'lucide-react';
+import { Users, UserCheck, ArrowLeftRight, Star, Activity, Home, Building2, ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../../components/layout/Layout';
 import MetricCard from '../../components/ui/MetricCard';
 import { StatusBadge, Spinner } from '../../components/ui';
 import api from '../../api/axios';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+
+const VirtualCalendar = ({ calendar }) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+  const today = new Date();
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const startDate = startOfWeek(monthStart);
+  const endDate = endOfWeek(monthEnd);
+
+  const getEventsForDay = (day) =>
+    calendar.filter(e => isSameDay(new Date(e.start), day));
+
+  const days = [];
+  let d = startDate;
+  while (d <= endDate) { days.push(d); d = addDays(d, 1); }
+
+  const selectedEvents = selectedDay ? getEventsForDay(selectedDay) : getEventsForDay(today);
+  const displayDay = selectedDay || today;
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-white">Events Calendar</h2>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 rounded hover:bg-dark-600 text-gray-400 hover:text-white transition-colors">
+            <ChevronLeft size={16} />
+          </button>
+          <span className="text-sm font-medium text-white w-32 text-center">{format(currentMonth, 'MMMM yyyy')}</span>
+          <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 rounded hover:bg-dark-600 text-gray-400 hover:text-white transition-colors">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <div className="grid grid-cols-7 mb-2">
+            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(day => (
+              <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">{day}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {days.map((day, i) => {
+              const events = getEventsForDay(day);
+              const isToday = isSameDay(day, today);
+              const isSelected = selectedDay && isSameDay(day, selectedDay);
+              const inMonth = isSameMonth(day, currentMonth);
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSelectedDay(isSameDay(day, selectedDay) ? null : day)}
+                  className={`relative flex flex-col items-center justify-start p-1 rounded-lg min-h-[44px] transition-colors
+                    ${ isSelected ? 'bg-primary-600 text-white' :
+                       isToday ? 'bg-primary-500/20 text-primary-400 ring-1 ring-primary-500' :
+                       inMonth ? 'hover:bg-dark-600 text-gray-300' : 'text-gray-600 hover:bg-dark-700'}`}
+                >
+                  <span className={`text-xs font-medium ${isToday && !isSelected ? 'text-primary-400' : ''}`}>{format(day, 'd')}</span>
+                  {events.length > 0 && (
+                    <div className="flex gap-0.5 mt-0.5 flex-wrap justify-center">
+                      {events.slice(0, 3).map((_, ei) => (
+                        <span key={ei} className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-primary-400'}`} />
+                      ))}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium text-gray-400 mb-3">
+            {format(displayDay, 'MMMM d, yyyy')}{isSameDay(displayDay, today) ? ' — Today' : ''}
+          </h3>
+          {selectedEvents.length === 0 ? (
+            <p className="text-gray-500 text-sm py-4 text-center">No events this day</p>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {selectedEvents.map((event, i) => (
+                <div key={i} className="p-3 bg-dark-700/50 rounded-lg border border-dark-600">
+                  <p className="text-sm font-medium text-white truncate">{event.title}</p>
+                  <p className="text-xs text-gray-400 mt-1">{format(new Date(event.start), 'h:mm a')}</p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-primary-400">{event.type}</span>
+                    <StatusBadge status={event.status} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const [metrics, setMetrics] = useState(null);
@@ -100,25 +197,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="card p-5">
-          <h2 className="text-base font-semibold text-white mb-4">Upcoming Events Calendar</h2>
-          {calendar.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-8">No upcoming events this month</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {calendar.slice(0, 6).map((event, i) => (
-                <div key={i} className="p-3 bg-dark-700/50 rounded-lg border border-dark-600">
-                  <p className="text-sm font-medium text-white truncate">{event.title}</p>
-                  <p className="text-xs text-gray-400 mt-1">{format(new Date(event.start), 'MMM d, h:mm a')}</p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-primary-400">{event.type}</span>
-                    <StatusBadge status={event.status} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <VirtualCalendar calendar={calendar} />
       </div>
     </Layout>
   );
