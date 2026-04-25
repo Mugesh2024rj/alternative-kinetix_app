@@ -4,12 +4,35 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a' },
-        dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155', 600: '#475569', 500: '#64748b' },
-        success: '#10b981', warning: '#f59e0b', danger: '#ef4444', info: '#06b6d4'
+        primary: {
+          DEFAULT: '#0F3D3E',
+          light: '#145A5B',
+          dark: '#0B2C2D'
+        },
+
+        background: '#F5F7F9',
+        card: '#FFFFFF',
+
+        text: {
+          primary: '#1E293B',
+          secondary: '#64748B'
+        },
+
+        border: '#E5E7EB',
+
+        success: '#22C55E',
+        warning: '#F59E0B',
+        danger: '#EF4444'
       },
-      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-      boxShadow: { card: '0 1px 3px 0 rgba(0,0,0,0.4), 0 1px 2px -1px rgba(0,0,0,0.4)', glow: '0 0 20px rgba(59,130,246,0.3)' }
+
+      boxShadow: {
+        card: '0 2px 8px rgba(0,0,0,0.05)'
+      },
+
+      borderRadius: {
+        xl: '12px',
+        '2xl': '16px'
+      }
     }
   },
   plugins: []
