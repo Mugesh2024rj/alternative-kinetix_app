@@ -49,18 +49,31 @@ const App = () => (
   <BrowserRouter>
     <AuthProvider>
       <NotificationProvider>
-        <AppRoutes />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: { background: '#1e293b', color: '#f1f5f9', border: '1px solid #334155' },
-            success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
-            error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } }
-          }}
-        />
+
+        {/* 🔥 GLOBAL BACKGROUND WRAPPER */}
+      <div className="bg-background min-h-screen">
+
+          <AppRoutes />
+
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: '#ffffff', // light UI
+                color: '#1f2937',
+                border: '1px solid #E5E7EB'
+              },
+              success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
+              error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } }
+            }}
+          />
+
+        </div>
+
       </NotificationProvider>
     </AuthProvider>
   </BrowserRouter>
 );
+
 
 export default App;

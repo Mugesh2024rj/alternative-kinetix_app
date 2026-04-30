@@ -240,7 +240,7 @@ const Doctors = () => {
                           {hv.status === 'pending' && (
                             <div className="flex gap-2">
                               <button onClick={() => handleApprove(hv.id, 'approve')} className="text-xs text-emerald-600 hover:underline flex items-center gap-1 font-medium"><Check size={12} /> Approve</button>
-                              <button onClick={() => handleApprove(hv.id, 'reject')} className="text-xs text-red-500 hover:underline flex items-center gap-1 font-medium"><X size={12} /> Reject</button>
+                              <button onClick={() => handleApprove(hv.id, 'reject')} className="text-xs text-red-600 hover:underline flex items-center gap-1 font-medium"><X size={12} /> Reject</button>
                             </div>
                           )}
                         </td>
