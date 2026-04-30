@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Users, ArrowLeftRight, Clock, Star, Plus, Filter } from 'lucide-react';
+import { Users, ArrowLeftRight, Clock, Star, Plus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../../components/layout/Layout';
 import MetricCard from '../../components/ui/MetricCard';
@@ -23,33 +23,33 @@ const HandoverForm = ({ doctors, patients, onSave, onClose }) => {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-xs text-gray-400 mb-1 block">Patient</label>
+        <div><label className="form-label">Patient</label>
           <select className="select w-full" value={form.patient_id} onChange={e => set('patient_id', e.target.value)} required>
             <option value="">Select Patient</option>
             {patients.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
           </select>
         </div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Priority</label>
+        <div><label className="form-label">Priority</label>
           <select className="select w-full" value={form.priority} onChange={e => set('priority', e.target.value)}>
             <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option>
           </select>
         </div>
-        <div><label className="text-xs text-gray-400 mb-1 block">From Doctor</label>
+        <div><label className="form-label">From Doctor</label>
           <select className="select w-full" value={form.from_doctor_id} onChange={e => set('from_doctor_id', e.target.value)}>
             <option value="">Select Doctor</option>
             {doctors.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
           </select>
         </div>
-        <div><label className="text-xs text-gray-400 mb-1 block">To Doctor</label>
+        <div><label className="form-label">To Doctor</label>
           <select className="select w-full" value={form.to_doctor_id} onChange={e => set('to_doctor_id', e.target.value)}>
             <option value="">Select Doctor</option>
             {doctors.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
           </select>
         </div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Case Type</label><input className="input" value={form.case_type} onChange={e => set('case_type', e.target.value)} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Stage</label><input className="input" value={form.stage} onChange={e => set('stage', e.target.value)} /></div>
-        <div className="col-span-2"><label className="text-xs text-gray-400 mb-1 block">Transfer Reason</label><textarea className="input" rows={2} value={form.transfer_reason} onChange={e => set('transfer_reason', e.target.value)} /></div>
-        <div className="col-span-2"><label className="text-xs text-gray-400 mb-1 block">Notes</label><textarea className="input" rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} /></div>
+        <div><label className="form-label">Case Type</label><input className="input" value={form.case_type} onChange={e => set('case_type', e.target.value)} /></div>
+        <div><label className="form-label">Stage</label><input className="input" value={form.stage} onChange={e => set('stage', e.target.value)} /></div>
+        <div className="col-span-2"><label className="form-label">Transfer Reason</label><textarea className="input" rows={2} value={form.transfer_reason} onChange={e => set('transfer_reason', e.target.value)} /></div>
+        <div className="col-span-2"><label className="form-label">Notes</label><textarea className="input" rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} /></div>
       </div>
       <div className="flex gap-3">
         <button type="submit" className="btn-primary flex-1 justify-center">Create Handover</button>
@@ -59,7 +59,7 @@ const HandoverForm = ({ doctors, patients, onSave, onClose }) => {
   );
 };
 
-const priorityColor = { low: 'text-emerald-400', medium: 'text-yellow-400', high: 'text-orange-400', critical: 'text-red-400' };
+const priorityColor = { low: 'text-emerald-700', medium: 'text-[#B45309]', high: 'text-orange-700', critical: 'text-red-600' };
 
 const Handovers = () => {
   const [metrics, setMetrics] = useState(null);
@@ -116,8 +116,8 @@ const Handovers = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 card">
-            <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-dark-700">
-              <h3 className="font-semibold text-white">Patient Transfer Queue</h3>
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-[#E5E7EB]">
+              <h3 className="font-semibold text-[#111827]">Patient Transfer Queue</h3>
               <div className="flex items-center gap-2">
                 <select className="select text-sm" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
                   <option value="">All Status</option><option value="pending">Pending</option><option value="active">Active</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
@@ -130,7 +130,7 @@ const Handovers = () => {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="border-b border-dark-700">
+                <thead className="border-b border-[#E5E7EB]">
                   <tr>{['Patient', 'Case Type', 'Stage', 'Transfer Reason', 'Priority', 'Requested On', 'Status', 'Actions'].map(h => <th key={h} className="table-header">{h}</th>)}</tr>
                 </thead>
                 <tbody>
@@ -139,20 +139,20 @@ const Handovers = () => {
                   ) : handovers.map(h => (
                     <tr key={h.id} className="table-row">
                       <td className="table-cell">
-                        <p className="font-medium text-white">{h.patient_name}</p>
-                        <p className="text-xs text-gray-500">{h.from_doctor_name} → {h.to_doctor_name}</p>
+                        <p className="font-medium text-[#111827]">{h.patient_name}</p>
+                        <p className="text-xs text-[#9CA3AF]">{h.from_doctor_name} → {h.to_doctor_name}</p>
                       </td>
-                      <td className="table-cell">{h.case_type || '-'}</td>
-                      <td className="table-cell">{h.stage || '-'}</td>
-                      <td className="table-cell max-w-[150px] truncate text-xs">{h.transfer_reason || '-'}</td>
+                      <td className="table-cell text-[#374151]">{h.case_type || '-'}</td>
+                      <td className="table-cell text-[#374151]">{h.stage || '-'}</td>
+                      <td className="table-cell max-w-[150px] truncate text-xs text-[#6B7280]">{h.transfer_reason || '-'}</td>
                       <td className="table-cell"><span className={`text-xs font-semibold uppercase ${priorityColor[h.priority]}`}>{h.priority}</span></td>
-                      <td className="table-cell text-xs">{format(new Date(h.requested_on), 'MMM d, yyyy')}</td>
+                      <td className="table-cell text-xs text-[#6B7280]">{format(new Date(h.requested_on), 'MMM d, yyyy')}</td>
                       <td className="table-cell"><StatusBadge status={h.status} /></td>
                       <td className="table-cell">
                         {h.status === 'pending' && (
                           <div className="flex gap-1">
-                            <button onClick={() => updateStatus(h.id, 'active')} className="text-xs text-blue-400 hover:text-blue-300">Activate</button>
-                            <button onClick={() => updateStatus(h.id, 'completed')} className="text-xs text-emerald-400 hover:text-emerald-300">Complete</button>
+                            <button onClick={() => updateStatus(h.id, 'active')} className="text-xs text-blue-600 hover:underline font-medium">Activate</button>
+                            <button onClick={() => updateStatus(h.id, 'completed')} className="text-xs text-emerald-600 hover:underline font-medium">Complete</button>
                           </div>
                         )}
                       </td>
@@ -165,37 +165,37 @@ const Handovers = () => {
 
           <div className="space-y-4">
             <div className="card p-4">
-              <h3 className="font-semibold text-white mb-3">Staff Availability</h3>
+              <h3 className="font-semibold text-[#111827] mb-3">Staff Availability</h3>
               <div className="flex gap-4 mb-4">
-                <div className="flex-1 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-emerald-400">{staffAvail.available}</p>
-                  <p className="text-xs text-gray-400">Available</p>
+                <div className="flex-1 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-emerald-600">{staffAvail.available}</p>
+                  <p className="text-xs text-[#6B7280]">Available</p>
                 </div>
-                <div className="flex-1 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-red-400">{staffAvail.unavailable}</p>
-                  <p className="text-xs text-gray-400">Unavailable</p>
+                <div className="flex-1 p-3 bg-red-50 border border-red-200 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-red-500">{staffAvail.unavailable}</p>
+                  <p className="text-xs text-[#6B7280]">Unavailable</p>
                 </div>
               </div>
               <ResponsiveContainer width="100%" height={150}>
                 <BarChart data={loadChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                  <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                  <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 12 }} />
-                  <Bar dataKey="load" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Load %" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis dataKey="name" tick={{ fill: '#6B7280', fontSize: 10 }} />
+                  <YAxis tick={{ fill: '#6B7280', fontSize: 10 }} />
+                  <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 12 }} />
+                  <Bar dataKey="load" fill="#1F4D3E" radius={[4, 4, 0, 0]} name="Load %" />
                 </BarChart>
               </ResponsiveContainer>
               <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
                 {staffAvail.doctors.map(doc => (
                   <div key={doc.id} className="flex items-center justify-between text-xs">
                     <div>
-                      <p className="text-white">{doc.full_name}</p>
-                      <p className="text-gray-500">{doc.specialisation}</p>
+                      <p className="text-[#111827] font-medium">{doc.full_name}</p>
+                      <p className="text-[#9CA3AF]">{doc.specialisation}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-gray-300">{doc.patient_count} pts</p>
-                      <div className="w-16 bg-dark-700 rounded-full h-1 mt-1">
-                        <div className="bg-primary-500 h-1 rounded-full" style={{ width: `${Math.min(doc.load_percentage || 0, 100)}%` }} />
+                      <p className="text-[#374151]">{doc.patient_count} pts</p>
+                      <div className="w-16 bg-[#E5E7EB] rounded-full h-1 mt-1">
+                        <div className="bg-[#1F4D3E] h-1 rounded-full" style={{ width: `${Math.min(doc.load_percentage || 0, 100)}%` }} />
                       </div>
                     </div>
                   </div>
@@ -204,19 +204,19 @@ const Handovers = () => {
             </div>
 
             <div className="card p-4">
-              <h3 className="font-semibold text-white mb-3">Recent Activity</h3>
+              <h3 className="font-semibold text-[#111827] mb-3">Recent Activity</h3>
               <div className="space-y-3">
                 {handovers.slice(0, 4).map(h => (
                   <div key={h.id} className="flex items-start gap-2 text-xs">
-                    <div className="w-1.5 h-1.5 bg-primary-500 rounded-full mt-1.5 shrink-0" />
+                    <div className="w-1.5 h-1.5 bg-[#1F4D3E] rounded-full mt-1.5 shrink-0" />
                     <div>
-                      <p className="text-white">{h.patient_name}</p>
-                      <p className="text-gray-500">{h.from_doctor_name} → {h.to_doctor_name}</p>
-                      <p className="text-gray-600">{format(new Date(h.requested_on), 'MMM d')}</p>
+                      <p className="text-[#111827] font-medium">{h.patient_name}</p>
+                      <p className="text-[#9CA3AF]">{h.from_doctor_name} → {h.to_doctor_name}</p>
+                      <p className="text-[#9CA3AF]">{format(new Date(h.requested_on), 'MMM d')}</p>
                     </div>
                   </div>
                 ))}
-                {handovers.length === 0 && <p className="text-gray-500 text-xs text-center py-4">No recent activity</p>}
+                {handovers.length === 0 && <p className="text-[#9CA3AF] text-xs text-center py-4">No recent activity</p>}
               </div>
             </div>
           </div>

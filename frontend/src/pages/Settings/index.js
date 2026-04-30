@@ -28,7 +28,7 @@ const ClinicProfile = () => {
   return (
     <div className="space-y-4 max-w-lg">
       {[['Clinic Name', 'clinic_name', 'text'], ['Address', 'address', 'text'], ['Phone', 'phone', 'text'], ['Email', 'email', 'email'], ['Website', 'website', 'url']].map(([label, key, type]) => (
-        <div key={key}><label className="text-xs text-gray-400 mb-1 block">{label}</label><input className="input" type={type} value={form[key]} onChange={e => set(key, e.target.value)} /></div>
+        <div key={key}><label className="form-label">{label}</label><input className="input" type={type} value={form[key]} onChange={e => set(key, e.target.value)} /></div>
       ))}
       <button onClick={save} className="btn-primary">Save Profile</button>
     </div>
@@ -48,9 +48,9 @@ const AppointmentTypes = () => {
       </div>
       <div className="space-y-2">
         {types.map(t => (
-          <div key={t} className="flex items-center justify-between p-3 bg-dark-700/50 rounded-lg">
-            <span className="text-sm text-white">{t}</span>
-            <button onClick={() => remove(t)} className="text-red-400 hover:text-red-300 text-xs">Remove</button>
+          <div key={t} className="flex items-center justify-between p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
+            <span className="text-sm text-[#111827] font-medium">{t}</span>
+            <button onClick={() => remove(t)} className="text-red-600 hover:text-red-700 text-xs font-medium">Remove</button>
           </div>
         ))}
       </div>
@@ -101,26 +101,26 @@ const StaffRoles = () => {
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b border-dark-700">
+          <thead className="border-b border-[#E5E7EB]">
             <tr>{['Name', 'Username', 'Email', 'Role', 'Active', 'Actions'].map(h => <th key={h} className="table-header">{h}</th>)}</tr>
           </thead>
           <tbody>
             {users.map(u => (
               <tr key={u.id} className="table-row">
-                <td className="table-cell font-medium text-white">{u.full_name}</td>
-                <td className="table-cell text-gray-400">{u.username}</td>
-                <td className="table-cell text-gray-400">{u.email}</td>
+                <td className="table-cell font-medium text-[#111827]">{u.full_name}</td>
+                <td className="table-cell text-[#374151]">{u.username}</td>
+                <td className="table-cell text-[#374151]">{u.email}</td>
                 <td className="table-cell">
                   <select className="select text-xs py-1" value={u.role} onChange={e => updateRole(u.id, e.target.value)}>
                     <option value="admin">Admin</option><option value="doctor">Doctor</option><option value="staff">Staff</option>
                   </select>
                 </td>
                 <td className="table-cell">
-                  <button onClick={() => toggleActive(u.id, u.is_active)} className={`text-xs px-2 py-0.5 rounded-full ${u.is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                  <button onClick={() => toggleActive(u.id, u.is_active)} className={`text-xs px-2 py-0.5 rounded-full font-medium ${u.is_active ? 'bg-[#D1FAE5] text-[#065F46]' : 'bg-[#FEE2E2] text-[#991B1B]'}`}>
                     {u.is_active ? 'Active' : 'Inactive'}
                   </button>
                 </td>
-                <td className="table-cell text-xs text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
+                <td className="table-cell text-xs text-[#6B7280]">{new Date(u.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
           </tbody>
@@ -129,11 +129,11 @@ const StaffRoles = () => {
       <Modal open={modal} onClose={() => setModal(false)} title="Add User">
         <form onSubmit={createUser} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div><label className="text-xs text-gray-400 mb-1 block">Full Name</label><input className="input" value={form.full_name} onChange={e => set('full_name', e.target.value)} required /></div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Username</label><input className="input" value={form.username} onChange={e => set('username', e.target.value)} required /></div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Email</label><input className="input" type="email" value={form.email} onChange={e => set('email', e.target.value)} required /></div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Password</label><input className="input" type="password" value={form.password} onChange={e => set('password', e.target.value)} required /></div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Role</label>
+            <div><label className="form-label">Full Name</label><input className="input" value={form.full_name} onChange={e => set('full_name', e.target.value)} required /></div>
+            <div><label className="form-label">Username</label><input className="input" value={form.username} onChange={e => set('username', e.target.value)} required /></div>
+            <div><label className="form-label">Email</label><input className="input" type="email" value={form.email} onChange={e => set('email', e.target.value)} required /></div>
+            <div><label className="form-label">Password</label><input className="input" type="password" value={form.password} onChange={e => set('password', e.target.value)} required /></div>
+            <div><label className="form-label">Role</label>
               <select className="select w-full" value={form.role} onChange={e => set('role', e.target.value)}>
                 <option value="admin">Admin</option><option value="doctor">Doctor</option><option value="staff">Staff</option>
               </select>
@@ -180,10 +180,10 @@ const SecuritySettings = () => {
   return (
     <div className="space-y-6 max-w-lg">
       <div className="card p-5">
-        <h3 className="font-semibold text-white mb-4">Change Password</h3>
+        <h3 className="font-semibold text-[#111827] mb-4">Change Password</h3>
         <form onSubmit={changePassword} className="space-y-3">
           {[['Current Password', 'current_password'], ['New Password', 'new_password'], ['Confirm New Password', 'confirm_password']].map(([label, key]) => (
-            <div key={key}><label className="text-xs text-gray-400 mb-1 block">{label}</label><input className="input" type="password" value={pwForm[key]} onChange={e => setPwForm(f => ({ ...f, [key]: e.target.value }))} required /></div>
+            <div key={key}><label className="form-label">{label}</label><input className="input" type="password" value={pwForm[key]} onChange={e => setPwForm(f => ({ ...f, [key]: e.target.value }))} required /></div>
           ))}
           <button type="submit" className="btn-primary">Update Password</button>
         </form>
@@ -192,26 +192,26 @@ const SecuritySettings = () => {
       <div className="card p-5">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-semibold text-white">Two-Factor Authentication</h3>
-            <p className="text-xs text-gray-400 mt-1">Add an extra layer of security to your account</p>
+            <h3 className="font-semibold text-[#111827]">Two-Factor Authentication</h3>
+            <p className="text-xs text-[#6B7280] mt-1">Add an extra layer of security to your account</p>
           </div>
-          <button onClick={toggle2FA} className={`relative w-12 h-6 rounded-full transition-colors ${twoFA ? 'bg-primary-600' : 'bg-dark-600'}`}>
+          <button onClick={toggle2FA} className={`relative w-12 h-6 rounded-full transition-colors ${twoFA ? 'bg-[#1F4D3E]' : 'bg-[#D1D5DB]'}`}>
             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${twoFA ? 'translate-x-7' : 'translate-x-1'}`} />
           </button>
         </div>
-        {twoFA && <div className="mt-3 p-3 bg-primary-500/10 border border-primary-500/20 rounded-lg text-xs text-primary-300">2FA is enabled. Use your authenticator app to generate codes.</div>}
+        {twoFA && <div className="mt-3 p-3 bg-[#E8F0EF] border border-[#1F4D3E]/20 rounded-lg text-xs text-[#1F4D3E]">2FA is enabled. Use your authenticator app to generate codes.</div>}
       </div>
 
       <div className="card p-5">
-        <h3 className="font-semibold text-white mb-3">Active Sessions</h3>
+        <h3 className="font-semibold text-[#111827] mb-3">Active Sessions</h3>
         <div className="space-y-2">
           {sessions.slice(0, 5).map(s => (
-            <div key={s.id} className="flex items-center justify-between p-2 bg-dark-700/50 rounded-lg text-xs">
+            <div key={s.id} className="flex items-center justify-between p-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg text-xs">
               <div>
-                <p className="text-white">{s.ip_address || 'Unknown IP'}</p>
-                <p className="text-gray-500">{new Date(s.created_at).toLocaleDateString()}</p>
+                <p className="text-[#111827] font-medium">{s.ip_address || 'Unknown IP'}</p>
+                <p className="text-[#9CA3AF]">{new Date(s.created_at).toLocaleDateString()}</p>
               </div>
-              <span className={`px-2 py-0.5 rounded-full ${s.is_active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-500/20 text-gray-400'}`}>{s.is_active ? 'Active' : 'Expired'}</span>
+              <span className={`px-2 py-0.5 rounded-full font-medium ${s.is_active ? 'bg-[#D1FAE5] text-[#065F46]' : 'bg-[#F3F4F6] text-[#6B7280]'}`}>{s.is_active ? 'Active' : 'Expired'}</span>
             </div>
           ))}
         </div>
@@ -230,9 +230,9 @@ const NotificationSettings = () => {
   return (
     <div className="space-y-4 max-w-md">
       {Object.entries(settings).map(([key, val]) => (
-        <div key={key} className="flex items-center justify-between p-3 bg-dark-700/50 rounded-lg">
-          <span className="text-sm text-white capitalize">{key.replace(/_/g, ' ')}</span>
-          <button onClick={() => toggle(key)} className={`relative w-10 h-5 rounded-full transition-colors ${val ? 'bg-primary-600' : 'bg-dark-600'}`}>
+        <div key={key} className="flex items-center justify-between p-3 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
+          <span className="text-sm text-[#111827] font-medium capitalize">{key.replace(/_/g, ' ')}</span>
+          <button onClick={() => toggle(key)} className={`relative w-10 h-5 rounded-full transition-colors ${val ? 'bg-[#1F4D3E]' : 'bg-[#D1D5DB]'}`}>
             <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${val ? 'translate-x-5' : 'translate-x-0.5'}`} />
           </button>
         </div>
@@ -253,15 +253,15 @@ const ScheduleSettings = () => {
   return (
     <div className="space-y-4 max-w-md">
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-xs text-gray-400 mb-1 block">Start Time</label><input className="input" type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">End Time</label><input className="input" type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Slot Duration (min)</label><input className="input" type="number" value={form.slot_duration} onChange={e => setForm(f => ({ ...f, slot_duration: e.target.value }))} /></div>
+        <div><label className="form-label">Start Time</label><input className="input" type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} /></div>
+        <div><label className="form-label">End Time</label><input className="input" type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} /></div>
+        <div><label className="form-label">Slot Duration (min)</label><input className="input" type="number" value={form.slot_duration} onChange={e => setForm(f => ({ ...f, slot_duration: e.target.value }))} /></div>
       </div>
       <div>
-        <label className="text-xs text-gray-400 mb-2 block">Working Days</label>
-        <div className="flex gap-2 flex-wrap">
+        <label className="form-label">Working Days</label>
+        <div className="flex gap-2 flex-wrap mt-1">
           {days.map(d => (
-            <button key={d} onClick={() => toggleDay(d)} className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${form.working_days.includes(d) ? 'bg-primary-600 text-white' : 'bg-dark-700 text-gray-400 hover:text-white'}`}>{d}</button>
+            <button key={d} onClick={() => toggleDay(d)} className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors ${form.working_days.includes(d) ? 'bg-[#1F4D3E] text-white' : 'bg-[#F3F4F6] text-[#374151] hover:bg-[#E5E7EB]'}`}>{d}</button>
           ))}
         </div>
       </div>
@@ -272,12 +272,12 @@ const ScheduleSettings = () => {
 
 const BillingPlan = () => (
   <div className="space-y-4 max-w-lg">
-    <div className="card p-5 border-primary-500/30">
+    <div className="card p-5 border-[#1F4D3E]/20">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-white">Current Plan</h3>
-        <span className="bg-primary-500/20 text-primary-400 text-xs px-3 py-1 rounded-full font-medium">Professional</span>
+        <h3 className="font-semibold text-[#111827]">Current Plan</h3>
+        <span className="bg-[#E8F0EF] text-[#1F4D3E] text-xs px-3 py-1 rounded-full font-medium">Professional</span>
       </div>
-      <div className="space-y-2 text-sm text-gray-300">
+      <div className="space-y-2 text-sm text-[#374151]">
         <p>✓ Unlimited patients</p><p>✓ All modules enabled</p><p>✓ Real-time notifications</p><p>✓ Advanced analytics</p><p>✓ Priority support</p>
       </div>
       <button className="btn-primary mt-4">Upgrade Plan</button>
@@ -290,10 +290,10 @@ const Integrations = () => (
     {[{ name: 'Electronic Health Records (EHR)', desc: 'Sync patient data with EHR systems', connected: false }, { name: 'SMS Gateway', desc: 'Send appointment reminders via SMS', connected: true }, { name: 'Email Service', desc: 'Automated email notifications', connected: true }, { name: 'Payment Gateway', desc: 'Process billing and payments', connected: false }].map(int => (
       <div key={int.name} className="card p-4 flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-white">{int.name}</p>
-          <p className="text-xs text-gray-400">{int.desc}</p>
+          <p className="text-sm font-medium text-[#111827]">{int.name}</p>
+          <p className="text-xs text-[#6B7280]">{int.desc}</p>
         </div>
-        <button className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${int.connected ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-primary-600 hover:bg-primary-700 text-white'}`}>
+        <button className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${int.connected ? 'bg-[#D1FAE5] text-[#065F46] hover:bg-[#A7F3D0]' : 'btn-primary'}`}>
           {int.connected ? 'Connected' : 'Connect'}
         </button>
       </div>
@@ -325,7 +325,7 @@ const SettingsPage = () => {
           <div className="card p-2 space-y-1">
             {tabs.map(({ id, label, icon: Icon }) => (
               <button key={id} onClick={() => setActiveTab(id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === id ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30' : 'text-gray-400 hover:text-white hover:bg-dark-700'}`}>
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left ${activeTab === id ? 'bg-[#E8F0EF] text-[#1F4D3E] border border-[#1F4D3E]/20' : 'text-[#374151] hover:text-[#111827] hover:bg-[#F3F4F6]'}`}>
                 <Icon size={16} />{label}
               </button>
             ))}
@@ -333,7 +333,7 @@ const SettingsPage = () => {
         </div>
         <div className="flex-1">
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-white mb-6">{tabs.find(t => t.id === activeTab)?.label}</h2>
+            <h2 className="text-lg font-semibold text-[#111827] mb-6">{tabs.find(t => t.id === activeTab)?.label}</h2>
             {renderContent()}
           </div>
         </div>

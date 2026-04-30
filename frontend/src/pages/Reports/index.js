@@ -29,22 +29,22 @@ const GenerateForm = ({ onSave, onClose }) => {
   };
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div><label className="text-xs text-gray-400 mb-1 block">Report Title</label><input className="input" value={form.title} onChange={e => set('title', e.target.value)} required /></div>
-      <div><label className="text-xs text-gray-400 mb-1 block">Report Type</label>
+      <div><label className="form-label">Report Title</label><input className="input" value={form.title} onChange={e => set('title', e.target.value)} required /></div>
+      <div><label className="form-label">Report Type</label>
         <select className="select w-full" value={form.type} onChange={e => set('type', e.target.value)}>
           {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-xs text-gray-400 mb-1 block">From Date</label><input className="input" type="date" value={form.parameters.from_date} onChange={e => setParam('from_date', e.target.value)} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">To Date</label><input className="input" type="date" value={form.parameters.to_date} onChange={e => setParam('to_date', e.target.value)} /></div>
+        <div><label className="form-label">From Date</label><input className="input" type="date" value={form.parameters.from_date} onChange={e => setParam('from_date', e.target.value)} /></div>
+        <div><label className="form-label">To Date</label><input className="input" type="date" value={form.parameters.to_date} onChange={e => setParam('to_date', e.target.value)} /></div>
       </div>
-      <div><label className="text-xs text-gray-400 mb-1 block">Export Format</label>
+      <div><label className="form-label">Export Format</label>
         <div className="flex gap-3">
           {['pdf', 'csv', 'excel'].map(f => (
             <label key={f} className="flex items-center gap-2 cursor-pointer">
-              <input type="radio" name="format" value={f} checked={form.file_format === f} onChange={() => set('file_format', f)} className="accent-primary-500" />
-              <span className="text-sm text-gray-300 uppercase">{f}</span>
+              <input type="radio" name="format" value={f} checked={form.file_format === f} onChange={() => set('file_format', f)} className="accent-[#1F4D3E]" />
+              <span className="text-sm text-[#111827] uppercase">{f}</span>
             </label>
           ))}
         </div>
@@ -71,20 +71,20 @@ const ScheduleForm = ({ onSave, onClose }) => {
   };
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div><label className="text-xs text-gray-400 mb-1 block">Report Title</label><input className="input" value={form.title} onChange={e => set('title', e.target.value)} required /></div>
-      <div><label className="text-xs text-gray-400 mb-1 block">Report Type</label>
+      <div><label className="form-label">Report Title</label><input className="input" value={form.title} onChange={e => set('title', e.target.value)} required /></div>
+      <div><label className="form-label">Report Type</label>
         <select className="select w-full" value={form.type} onChange={e => set('type', e.target.value)}>
           {REPORT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <div><label className="text-xs text-gray-400 mb-1 block">Frequency</label>
+        <div><label className="form-label">Frequency</label>
           <select className="select w-full" value={form.schedule_config.frequency} onChange={e => setSched('frequency', e.target.value)}>
             <option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option>
           </select>
         </div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Day</label><input className="input" value={form.schedule_config.day} onChange={e => setSched('day', e.target.value)} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Time</label><input className="input" type="time" value={form.schedule_config.time} onChange={e => setSched('time', e.target.value)} /></div>
+        <div><label className="form-label">Day</label><input className="input" value={form.schedule_config.day} onChange={e => setSched('day', e.target.value)} /></div>
+        <div><label className="form-label">Time</label><input className="input" type="time" value={form.schedule_config.time} onChange={e => setSched('time', e.target.value)} /></div>
       </div>
       <div className="flex gap-3">
         <button type="submit" className="btn-primary flex-1 justify-center">Schedule Report</button>
@@ -120,7 +120,7 @@ const Reports = () => {
     <Layout title="Reports">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Reports & Exports</h2>
+          <h2 className="text-lg font-semibold text-[#111827]">Reports & Exports</h2>
           <div className="flex gap-3">
             <button onClick={() => setModal('schedule')} className="btn-secondary"><Calendar size={16} /> Schedule Report</button>
             <button onClick={() => setModal('generate')} className="btn-primary"><Plus size={16} /> Generate Report</button>
@@ -129,33 +129,33 @@ const Reports = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {REPORT_TYPES.map(type => (
-            <div key={type.value} className="card p-4 flex items-center justify-between hover:border-primary-500/30 transition-colors cursor-pointer" onClick={() => setModal('generate')}>
+            <div key={type.value} className="card p-4 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors cursor-pointer" onClick={() => setModal('generate')}>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary-500/20 rounded-lg"><FileText size={18} className="text-primary-400" /></div>
+                <div className="p-2 bg-[#E8F0EF] rounded-lg"><FileText size={18} className="text-[#1F4D3E]" /></div>
                 <div>
-                  <p className="text-sm font-medium text-white">{type.label}</p>
-                  <p className="text-xs text-gray-500">Click to generate</p>
+                  <p className="text-sm font-medium text-[#111827]">{type.label}</p>
+                  <p className="text-xs text-[#6B7280]">Click to generate</p>
                 </div>
               </div>
-              <Download size={16} className="text-gray-400" />
+              <Download size={16} className="text-[#6B7280]" />
             </div>
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card">
-            <div className="p-4 border-b border-dark-700"><h3 className="font-semibold text-white">Recent Exports</h3></div>
-            <div className="divide-y divide-dark-700">
+            <div className="p-4 border-b border-[#E5E7EB]"><h3 className="font-semibold text-[#111827]">Recent Exports</h3></div>
+            <div className="divide-y divide-[#E5E7EB]">
               {recent.length === 0 ? <EmptyState message="No recent exports" /> : recent.map(r => (
                 <div key={r.id} className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">{r.title}</p>
-                    <p className="text-xs text-gray-400">{typeLabel(r.type)} · {r.file_format?.toUpperCase()}</p>
-                    <p className="text-xs text-gray-500">{format(new Date(r.created_at), 'MMM d, yyyy h:mm a')}</p>
+                    <p className="text-sm font-medium text-[#111827]">{r.title}</p>
+                    <p className="text-xs text-[#6B7280]">{typeLabel(r.type)} · {r.file_format?.toUpperCase()}</p>
+                    <p className="text-xs text-[#9CA3AF]">{format(new Date(r.created_at), 'MMM d, yyyy h:mm a')}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={r.status} />
-                    {r.status === 'completed' && <button className="text-primary-400 hover:text-primary-300"><Download size={16} /></button>}
+                    {r.status === 'completed' && <button className="text-[#1F4D3E] hover:text-[#17382D]"><Download size={16} /></button>}
                   </div>
                 </div>
               ))}
@@ -163,22 +163,22 @@ const Reports = () => {
           </div>
 
           <div className="card">
-            <div className="p-4 border-b border-dark-700"><h3 className="font-semibold text-white">Scheduled Reports</h3></div>
-            <div className="divide-y divide-dark-700">
+            <div className="p-4 border-b border-[#E5E7EB]"><h3 className="font-semibold text-[#111827]">Scheduled Reports</h3></div>
+            <div className="divide-y divide-[#E5E7EB]">
               {scheduled.length === 0 ? <EmptyState message="No scheduled reports" /> : scheduled.map(r => (
                 <div key={r.id} className="p-4 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">{r.title}</p>
-                    <p className="text-xs text-gray-400">{typeLabel(r.type)}</p>
+                    <p className="text-sm font-medium text-[#111827]">{r.title}</p>
+                    <p className="text-xs text-[#6B7280]">{typeLabel(r.type)}</p>
                     {r.schedule_config && (
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-[#9CA3AF] mt-0.5">
                         {r.schedule_config.frequency} · {r.schedule_config.day} at {r.schedule_config.time}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Clock size={14} className="text-yellow-400" />
-                    <span className="text-xs text-yellow-400">Scheduled</span>
+                    <Clock size={14} className="text-[#F59E0B]" />
+                    <span className="text-xs text-[#92400E] font-medium">Scheduled</span>
                   </div>
                 </div>
               ))}

@@ -8,14 +8,14 @@ const Modal = ({ open, onClose, title, children, size = 'md' }) => {
     <AnimatePresence>
       {open && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
           onClick={onClose}>
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-            className={`bg-dark-800 rounded-xl border border-dark-700 w-full ${sizes[size]} max-h-[90vh] overflow-y-auto`}
+            className={`bg-white rounded-2xl border border-[#E5E7EB] w-full ${sizes[size]} max-h-[90vh] overflow-y-auto shadow-card-hover`}
             onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-dark-700">
-              <h2 className="text-lg font-semibold text-white">{title}</h2>
-              <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
+            <div className="flex items-center justify-between p-5 border-b border-[#E5E7EB]">
+              <h2 className="text-lg font-semibold text-[#111827]">{title}</h2>
+              <button onClick={onClose} className="text-[#6B7280] hover:text-[#111827] transition-colors"><X size={20} /></button>
             </div>
             <div className="p-5">{children}</div>
           </motion.div>

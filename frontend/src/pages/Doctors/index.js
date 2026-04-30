@@ -23,11 +23,11 @@ const DoctorForm = ({ initial, onSave, onClose }) => {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-xs text-gray-400 mb-1 block">Full Name</label><input className="input" value={form.full_name} onChange={e => set('full_name', e.target.value)} required /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Specialisation</label><input className="input" value={form.specialisation} onChange={e => set('specialisation', e.target.value)} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Phone</label><input className="input" value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Email</label><input className="input" type="email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Status</label>
+        <div><label className="form-label">Full Name</label><input className="input" value={form.full_name} onChange={e => set('full_name', e.target.value)} required /></div>
+        <div><label className="form-label">Specialisation</label><input className="input" value={form.specialisation} onChange={e => set('specialisation', e.target.value)} /></div>
+        <div><label className="form-label">Phone</label><input className="input" value={form.phone} onChange={e => set('phone', e.target.value)} /></div>
+        <div><label className="form-label">Email</label><input className="input" type="email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
+        <div><label className="form-label">Status</label>
           <select className="select w-full" value={form.status} onChange={e => set('status', e.target.value)}>
             <option value="active">Active</option><option value="leave">Leave</option><option value="inactive">Inactive</option>
           </select>
@@ -56,28 +56,28 @@ const HouseVisitForm = ({ onSave, onClose, doctors, patients }) => {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-xs text-gray-400 mb-1 block">Doctor</label>
+        <div><label className="form-label">Doctor</label>
           <select className="select w-full" value={form.doctor_id} onChange={e => set('doctor_id', e.target.value)} required>
             <option value="">Select Doctor</option>
             {doctors.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}
           </select>
         </div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Patient</label>
+        <div><label className="form-label">Patient</label>
           <select className="select w-full" value={form.patient_id} onChange={e => set('patient_id', e.target.value)} required>
             <option value="">Select Patient</option>
             {patients.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
           </select>
         </div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Visit Date</label><input className="input" type="datetime-local" value={form.visit_date} onChange={e => set('visit_date', e.target.value)} required /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Next Visit</label><input className="input" type="datetime-local" value={form.next_visit_date} onChange={e => set('next_visit_date', e.target.value)} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Distance (km)</label><input className="input" type="number" step="0.1" value={form.distance} onChange={e => set('distance', e.target.value)} /></div>
+        <div><label className="form-label">Visit Date</label><input className="input" type="datetime-local" value={form.visit_date} onChange={e => set('visit_date', e.target.value)} required /></div>
+        <div><label className="form-label">Next Visit</label><input className="input" type="datetime-local" value={form.next_visit_date} onChange={e => set('next_visit_date', e.target.value)} /></div>
+        <div><label className="form-label">Distance (km)</label><input className="input" type="number" step="0.1" value={form.distance} onChange={e => set('distance', e.target.value)} /></div>
       </div>
       <div className="grid grid-cols-4 gap-3">
         {['bp', 'pulse', 'temp', 'spo2'].map(v => (
-          <div key={v}><label className="text-xs text-gray-400 mb-1 block uppercase">{v}</label><input className="input" value={form.vitals[v]} onChange={e => setVital(v, e.target.value)} placeholder={v === 'bp' ? '120/80' : v === 'pulse' ? '72' : v === 'temp' ? '98.6' : '98%'} /></div>
+          <div key={v}><label className="form-label uppercase">{v}</label><input className="input" value={form.vitals[v]} onChange={e => setVital(v, e.target.value)} placeholder={v === 'bp' ? '120/80' : v === 'pulse' ? '72' : v === 'temp' ? '98.6' : '98%'} /></div>
         ))}
       </div>
-      <div><label className="text-xs text-gray-400 mb-1 block">Notes</label><textarea className="input" rows={3} value={form.notes} onChange={e => set('notes', e.target.value)} /></div>
+      <div><label className="form-label">Notes</label><textarea className="input" rows={3} value={form.notes} onChange={e => set('notes', e.target.value)} /></div>
       <div className="flex gap-3">
         <button type="submit" className="btn-primary flex-1 justify-center">Submit Visit</button>
         <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
@@ -142,10 +142,10 @@ const Doctors = () => {
           <MetricCard title="Patient Satisfaction" value={`${metrics?.patient_satisfaction || '0.00'}/5`} icon={Star} color="purple" />
         </div>
 
-        <div className="flex gap-2 border-b border-dark-700">
+        <div className="flex gap-2 border-b border-[#E5E7EB]">
           {['doctors', 'house-visits'].map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-primary-500 text-primary-400' : 'border-transparent text-gray-400 hover:text-white'}`}>
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t ? 'border-[#1F4D3E] text-[#1F4D3E]' : 'border-transparent text-[#6B7280] hover:text-[#111827]'}`}>
               {t === 'doctors' ? 'Doctor List' : 'House Visit Metrics'}
             </button>
           ))}
@@ -153,9 +153,9 @@ const Doctors = () => {
 
         {tab === 'doctors' && (
           <div className="card">
-            <div className="flex items-center justify-between p-4 border-b border-dark-700">
+            <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB]">
               <div className="flex items-center gap-3">
-                <div className="relative"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input className="input pl-9 w-64" placeholder="Search doctors..." value={search} onChange={e => setSearch(e.target.value)} /></div>
+                <div className="relative"><Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" /><input className="input pl-9 w-64" placeholder="Search doctors..." value={search} onChange={e => setSearch(e.target.value)} /></div>
                 <select className="select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
                   <option value="">All Status</option><option value="active">Active</option><option value="leave">Leave</option><option value="inactive">Inactive</option>
                 </select>
@@ -164,7 +164,7 @@ const Doctors = () => {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="border-b border-dark-700">
+                <thead className="border-b border-[#E5E7EB]">
                   <tr>
                     {['Name', 'Specialisation', 'No. of Patients', 'House Visits', 'Scheduled Timeline', 'Status', 'Actions'].map(h => (
                       <th key={h} className="table-header">{h}</th>
@@ -178,26 +178,26 @@ const Doctors = () => {
                     <tr key={doc.id} className="table-row">
                       <td className="table-cell">
                         <div>
-                          <p className="font-medium text-white">{doc.full_name}</p>
-                          <p className="text-xs text-gray-500">{doc.email}</p>
+                          <p className="font-medium text-[#111827]">{doc.full_name}</p>
+                          <p className="text-xs text-[#9CA3AF]">{doc.email}</p>
                         </div>
                       </td>
-                      <td className="table-cell">{doc.specialisation}</td>
-                      <td className="table-cell">{doc.patient_count}</td>
-                      <td className="table-cell">{doc.house_visit_count}</td>
+                      <td className="table-cell text-[#374151]">{doc.specialisation}</td>
+                      <td className="table-cell text-[#374151]">{doc.patient_count}</td>
+                      <td className="table-cell text-[#374151]">{doc.house_visit_count}</td>
                       <td className="table-cell">
                         <div className="flex items-center gap-1">
-                          <div className="w-24 bg-dark-700 rounded-full h-1.5">
-                            <div className="bg-primary-500 h-1.5 rounded-full" style={{ width: `${Math.min((doc.today_appointments || 0) * 20, 100)}%` }} />
+                          <div className="w-24 bg-[#E5E7EB] rounded-full h-1.5">
+                            <div className="bg-[#1F4D3E] h-1.5 rounded-full" style={{ width: `${Math.min((doc.today_appointments || 0) * 20, 100)}%` }} />
                           </div>
-                          <span className="text-xs text-gray-400">{doc.today_appointments || 0} today</span>
+                          <span className="text-xs text-[#6B7280]">{doc.today_appointments || 0} today</span>
                         </div>
                       </td>
                       <td className="table-cell"><StatusBadge status={doc.status} /></td>
                       <td className="table-cell">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => { setEditDoctor(doc); setModal('edit'); }} className="text-xs text-primary-400 hover:text-primary-300">Edit</button>
-                          <button onClick={() => handleDelete(doc.id)} className="text-xs text-red-400 hover:text-red-300">Delete</button>
+                          <button onClick={() => { setEditDoctor(doc); setModal('edit'); }} className="text-xs text-[#1F4D3E] hover:underline font-medium">Edit</button>
+                          <button onClick={() => handleDelete(doc.id)} className="text-xs text-red-600 hover:underline font-medium">Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -219,10 +219,10 @@ const Doctors = () => {
               <button onClick={() => setModal('hv')} className="btn-primary"><Plus size={16} /> Submit House Visit</button>
             </div>
             <div className="card">
-              <div className="p-4 border-b border-dark-700"><h3 className="font-semibold text-white">House Visit Records</h3></div>
+              <div className="p-4 border-b border-[#E5E7EB]"><h3 className="font-semibold text-[#111827]">House Visit Records</h3></div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="border-b border-dark-700">
+                  <thead className="border-b border-[#E5E7EB]">
                     <tr>{['Doctor', 'Patient', 'Last Entry', 'Next Visit', 'Distance', 'Status', 'Actions'].map(h => <th key={h} className="table-header">{h}</th>)}</tr>
                   </thead>
                   <tbody>
@@ -230,17 +230,17 @@ const Doctors = () => {
                       <tr><td colSpan={7}><EmptyState message="No house visits found" /></td></tr>
                     ) : houseVisits.map(hv => (
                       <tr key={hv.id} className="table-row">
-                        <td className="table-cell font-medium text-white">{hv.doctor_name}</td>
-                        <td className="table-cell">{hv.patient_name}</td>
-                        <td className="table-cell text-xs">{hv.visit_date ? new Date(hv.visit_date).toLocaleDateString() : '-'}</td>
-                        <td className="table-cell text-xs">{hv.next_visit_date ? new Date(hv.next_visit_date).toLocaleDateString() : '-'}</td>
-                        <td className="table-cell">{hv.distance ? `${hv.distance} km` : '-'}</td>
+                        <td className="table-cell font-medium text-[#111827]">{hv.doctor_name}</td>
+                        <td className="table-cell text-[#374151]">{hv.patient_name}</td>
+                        <td className="table-cell text-xs text-[#6B7280]">{hv.visit_date ? new Date(hv.visit_date).toLocaleDateString() : '-'}</td>
+                        <td className="table-cell text-xs text-[#6B7280]">{hv.next_visit_date ? new Date(hv.next_visit_date).toLocaleDateString() : '-'}</td>
+                        <td className="table-cell text-[#374151]">{hv.distance ? `${hv.distance} km` : '-'}</td>
                         <td className="table-cell"><StatusBadge status={hv.status} /></td>
                         <td className="table-cell">
                           {hv.status === 'pending' && (
                             <div className="flex gap-2">
-                              <button onClick={() => handleApprove(hv.id, 'approve')} className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"><Check size={12} /> Approve</button>
-                              <button onClick={() => handleApprove(hv.id, 'reject')} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"><X size={12} /> Reject</button>
+                              <button onClick={() => handleApprove(hv.id, 'approve')} className="text-xs text-emerald-600 hover:underline flex items-center gap-1 font-medium"><Check size={12} /> Approve</button>
+                              <button onClick={() => handleApprove(hv.id, 'reject')} className="text-xs text-red-500 hover:underline flex items-center gap-1 font-medium"><X size={12} /> Reject</button>
                             </div>
                           )}
                         </td>

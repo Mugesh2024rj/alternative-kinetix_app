@@ -20,15 +20,15 @@ const EventForm = ({ onSave, onClose }) => {
   };
   return (
     <form onSubmit={submit} className="space-y-4">
-      <div><label className="text-xs text-gray-400 mb-1 block">Event Title</label><input className="input" value={form.title} onChange={e => set('title', e.target.value)} required /></div>
+      <div><label className="form-label">Event Title</label><input className="input" value={form.title} onChange={e => set('title', e.target.value)} required /></div>
       <div className="grid grid-cols-2 gap-4">
-        <div><label className="text-xs text-gray-400 mb-1 block">Start Date</label><input className="input" type="datetime-local" value={form.event_date} onChange={e => set('event_date', e.target.value)} required /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">End Date</label><input className="input" type="datetime-local" value={form.end_date} onChange={e => set('end_date', e.target.value)} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Location</label><input className="input" value={form.location} onChange={e => set('location', e.target.value)} /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Type</label><input className="input" value={form.type} onChange={e => set('type', e.target.value)} placeholder="e.g. Workshop, Seminar" /></div>
-        <div><label className="text-xs text-gray-400 mb-1 block">Max Participants</label><input className="input" type="number" value={form.max_participants} onChange={e => set('max_participants', e.target.value)} /></div>
+        <div><label className="form-label">Start Date</label><input className="input" type="datetime-local" value={form.event_date} onChange={e => set('event_date', e.target.value)} required /></div>
+        <div><label className="form-label">End Date</label><input className="input" type="datetime-local" value={form.end_date} onChange={e => set('end_date', e.target.value)} /></div>
+        <div><label className="form-label">Location</label><input className="input" value={form.location} onChange={e => set('location', e.target.value)} /></div>
+        <div><label className="form-label">Type</label><input className="input" value={form.type} onChange={e => set('type', e.target.value)} placeholder="e.g. Workshop, Seminar" /></div>
+        <div><label className="form-label">Max Participants</label><input className="input" type="number" value={form.max_participants} onChange={e => set('max_participants', e.target.value)} /></div>
       </div>
-      <div><label className="text-xs text-gray-400 mb-1 block">Description</label><textarea className="input" rows={3} value={form.description} onChange={e => set('description', e.target.value)} /></div>
+      <div><label className="form-label">Description</label><textarea className="input" rows={3} value={form.description} onChange={e => set('description', e.target.value)} /></div>
       <div className="flex gap-3">
         <button type="submit" className="btn-primary flex-1 justify-center">Create Event</button>
         <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
@@ -71,24 +71,24 @@ const EventDetailModal = ({ eventId, onClose }) => {
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 text-sm">
         {[['Title', event.title], ['Type', event.type], ['Location', event.location], ['Date', event.event_date ? format(new Date(event.event_date), 'MMM d, yyyy h:mm a') : '-'], ['Max Participants', event.max_participants], ['Status', event.status]].map(([k, v]) => (
-          <div key={k}><span className="text-gray-400">{k}: </span><span className="text-white">{v || '-'}</span></div>
+          <div key={k}><span className="text-[#6B7280]">{k}: </span><span className="text-[#111827] font-medium">{v || '-'}</span></div>
         ))}
       </div>
-      {event.description && <p className="text-sm text-gray-300 bg-dark-700/50 p-3 rounded-lg">{event.description}</p>}
+      {event.description && <p className="text-sm text-[#374151] bg-[#F9FAFB] border border-[#E5E7EB] p-3 rounded-lg">{event.description}</p>}
 
       <div>
-        <h4 className="text-sm font-semibold text-white mb-2">Assigned Staff & Students ({event.assignments?.length || 0})</h4>
+        <h4 className="text-sm font-semibold text-[#111827] mb-2">Assigned Staff & Students ({event.assignments?.length || 0})</h4>
         <div className="space-y-2 mb-3 max-h-32 overflow-y-auto">
           {event.assignments?.map(a => (
-            <div key={a.id} className="flex items-center justify-between text-xs p-2 bg-dark-700/50 rounded">
-              <span className="text-white">{a.full_name}</span>
+            <div key={a.id} className="flex items-center justify-between text-xs p-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded">
+              <span className="text-[#111827] font-medium">{a.full_name}</span>
               <div className="flex items-center gap-2">
-                <span className="text-gray-400 capitalize">{a.role}</span>
-                <span className="text-gray-500 capitalize">{a.role_in_system}</span>
+                <span className="text-[#6B7280] capitalize">{a.role}</span>
+                <span className="text-[#9CA3AF] capitalize">{a.role_in_system}</span>
               </div>
             </div>
           ))}
-          {!event.assignments?.length && <p className="text-gray-500 text-xs">No assignments yet</p>}
+          {!event.assignments?.length && <p className="text-[#9CA3AF] text-xs">No assignments yet</p>}
         </div>
         <div className="flex gap-2">
           <select className="select flex-1 text-sm" value={assignUserId} onChange={e => setAssignUserId(e.target.value)}>
@@ -101,7 +101,7 @@ const EventDetailModal = ({ eventId, onClose }) => {
       </div>
 
       <div>
-        <h4 className="text-sm font-semibold text-white mb-2">Post-Event Report</h4>
+        <h4 className="text-sm font-semibold text-[#111827] mb-2">Post-Event Report</h4>
         <textarea className="input" rows={4} value={postReport} onChange={e => setPostReport(e.target.value)} placeholder="Write post-event report..." />
         <button onClick={saveReport} className="btn-primary mt-2 text-sm">Save Report</button>
       </div>
@@ -125,7 +125,7 @@ const Events = () => {
 
   useEffect(() => { fetchData(); }, []);
 
-  const statusColors = { upcoming: 'bg-blue-500/20 text-blue-400', ongoing: 'bg-emerald-500/20 text-emerald-400', completed: 'bg-gray-500/20 text-gray-400', cancelled: 'bg-red-500/20 text-red-400' };
+  const statusColors = { upcoming: 'bg-[#DBEAFE] text-[#1D4ED8]', ongoing: 'bg-[#D1FAE5] text-[#065F46]', completed: 'bg-[#F3F4F6] text-[#374151]', cancelled: 'bg-[#FEE2E2] text-[#991B1B]' };
 
   if (loading) return <Layout title="Events & Outreach"><Spinner /></Layout>;
 
@@ -133,7 +133,7 @@ const Events = () => {
     <Layout title="Events & Outreach">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Events & Outreach</h2>
+          <h2 className="text-lg font-semibold text-[#111827]">Events & Outreach</h2>
           <button onClick={() => setModal('create')} className="btn-primary"><Plus size={16} /> Create Event</button>
         </div>
 
@@ -142,15 +142,15 @@ const Events = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {events.map(event => (
-              <div key={event.id} className="card p-4 hover:border-primary-500/30 transition-colors">
+              <div key={event.id} className="card p-4 hover:bg-[#F9FAFB] transition-colors">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="p-2 bg-primary-500/20 rounded-lg"><CalendarDays size={18} className="text-primary-400" /></div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[event.status] || 'bg-gray-500/20 text-gray-400'}`}>{event.status}</span>
+                  <div className="p-2 bg-[#E8F0EF] rounded-lg"><CalendarDays size={18} className="text-[#1F4D3E]" /></div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[event.status] || 'bg-[#F3F4F6] text-[#374151]'}`}>{event.status}</span>
                 </div>
-                <h3 className="font-semibold text-white mb-1">{event.title}</h3>
-                {event.type && <p className="text-xs text-primary-400 mb-2">{event.type}</p>}
-                {event.description && <p className="text-xs text-gray-400 mb-3 line-clamp-2">{event.description}</p>}
-                <div className="space-y-1 text-xs text-gray-500">
+                <h3 className="font-semibold text-[#111827] mb-1">{event.title}</h3>
+                {event.type && <p className="text-xs text-[#1F4D3E] font-medium mb-2">{event.type}</p>}
+                {event.description && <p className="text-xs text-[#6B7280] mb-3 line-clamp-2">{event.description}</p>}
+                <div className="space-y-1 text-xs text-[#9CA3AF]">
                   {event.event_date && <div className="flex items-center gap-1"><CalendarDays size={12} />{format(new Date(event.event_date), 'MMM d, yyyy h:mm a')}</div>}
                   {event.location && <div className="flex items-center gap-1"><MapPin size={12} />{event.location}</div>}
                   <div className="flex items-center gap-1"><Users size={12} />{event.participant_count || 0} assigned</div>

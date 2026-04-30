@@ -6,13 +6,13 @@ import MetricCard from '../../components/ui/MetricCard';
 import { Spinner } from '../../components/ui';
 import api from '../../api/axios';
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+const COLORS = ['#1F4D3E', '#10b981', '#F59E0B', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-dark-700 border border-dark-600 rounded-lg p-3 text-xs">
-      <p className="text-gray-300 mb-1">{label}</p>
+    <div className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-xs shadow-card-hover">
+      <p className="text-[#374151] mb-1 font-medium">{label}</p>
       {payload.map((p, i) => <p key={i} style={{ color: p.color }}>{p.name}: {p.value}</p>)}
     </div>
   );
@@ -48,10 +48,10 @@ const Analytics = () => {
     <Layout title="Analytics">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-white">Analytics Overview</h2>
-          <div className="flex bg-dark-700 rounded-lg p-1 gap-1">
+          <h2 className="text-lg font-semibold text-[#111827]">Analytics Overview</h2>
+          <div className="flex bg-[#F3F4F6] rounded-lg p-1 gap-1">
             {['weekly', 'monthly', 'quarterly'].map(p => (
-              <button key={p} onClick={() => setPeriod(p)} className={`px-4 py-1.5 text-xs rounded-md capitalize transition-colors ${period === p ? 'bg-primary-600 text-white' : 'text-gray-400 hover:text-white'}`}>{p}</button>
+              <button key={p} onClick={() => setPeriod(p)} className={`px-4 py-1.5 text-xs rounded-md capitalize transition-colors ${period === p ? 'bg-[#1F4D3E] text-white' : 'text-[#6B7280] hover:text-[#111827]'}`}>{p}</button>
             ))}
           </div>
         </div>
@@ -65,46 +65,46 @@ const Analytics = () => {
         </div>
 
         <div className="card p-5">
-          <h3 className="font-semibold text-white mb-4">Appointment Trends</h3>
+          <h3 className="font-semibold text-[#111827] mb-4">Appointment Trends</h3>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={trends}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis dataKey="label" tick={{ fill: '#6B7280', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2.5} dot={{ fill: '#3b82f6', r: 3 }} name="Appointments" />
+              <Line type="monotone" dataKey="value" stroke="#1F4D3E" strokeWidth={2.5} dot={{ fill: '#1F4D3E', r: 3 }} name="Appointments" />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card p-5">
-            <h3 className="font-semibold text-white mb-4">Assessment Status Distribution</h3>
+            <h3 className="font-semibold text-[#111827] mb-4">Assessment Status Distribution</h3>
             {assessmentPie.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-gray-500 text-sm">No assessment data</div>
+              <div className="flex items-center justify-center h-48 text-[#9CA3AF] text-sm">No assessment data</div>
             ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
                   <Pie data={assessmentPie} dataKey="value" nameKey="status" cx="50%" cy="50%" outerRadius={90} label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
                     {assessmentPie.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
-                  <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, fontSize: 12 }} />
-                  <Legend wrapperStyle={{ color: '#94a3b8', fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 12 }} />
+                  <Legend wrapperStyle={{ color: '#6B7280', fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
             )}
           </div>
 
           <div className="card p-5">
-            <h3 className="font-semibold text-white mb-4">Doctor Workload</h3>
+            <h3 className="font-semibold text-[#111827] mb-4">Doctor Workload</h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={doctorWorkload.slice(0, 6)}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={v => v.split(' ').pop()} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="name" tick={{ fill: '#6B7280', fontSize: 10 }} tickFormatter={v => v.split(' ').pop()} />
+                <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} />
                 <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ color: '#94a3b8', fontSize: 12 }} />
-                <Bar dataKey="patients" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Patients" />
+                <Legend wrapperStyle={{ color: '#6B7280', fontSize: 12 }} />
+                <Bar dataKey="patients" fill="#1F4D3E" radius={[4, 4, 0, 0]} name="Patients" />
                 <Bar dataKey="appointments" fill="#10b981" radius={[4, 4, 0, 0]} name="Today's Appts" />
               </BarChart>
             </ResponsiveContainer>

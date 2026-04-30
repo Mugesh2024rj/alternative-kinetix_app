@@ -4,19 +4,20 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 const MetricCard = ({ title, value, icon: Icon, color = 'primary', trend, trendValue, subtitle }) => {
   const colorMap = {
-    primary: 'bg-primary-500/20 text-primary-400',
-    success: 'bg-emerald-500/20 text-emerald-400',
-    warning: 'bg-yellow-500/20 text-yellow-400',
-    danger: 'bg-red-500/20 text-red-400',
-    info: 'bg-cyan-500/20 text-cyan-400',
-    purple: 'bg-purple-500/20 text-purple-400',
+    primary: 'bg-[#E8F0EF] text-[#1F4D3E]',
+    success: 'bg-[#D1FAE5] text-[#065F46]',
+    warning: 'bg-[#FEF3C7] text-[#92400E]',
+    danger:  'bg-[#FEE2E2] text-[#991B1B]',
+    info:    'bg-[#DBEAFE] text-[#1D4ED8]',
+    purple:  'bg-[#EDE9FE] text-[#5B21B6]',
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2 }}
+      whileHover={{ y: -2, scale: 1.02 }}
+      transition={{ duration: 0.2 }}
       className="metric-card"
     >
       <div className="flex items-start justify-between">
@@ -24,16 +25,16 @@ const MetricCard = ({ title, value, icon: Icon, color = 'primary', trend, trendV
           <Icon size={20} />
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-xs font-medium ${trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-gray-400'}`}>
+          <div className={`flex items-center gap-1 text-xs font-medium ${trend === 'up' ? 'text-emerald-700' : trend === 'down' ? 'text-red-600' : 'text-[#6B7280]'}`}>
             {trend === 'up' ? <TrendingUp size={14} /> : trend === 'down' ? <TrendingDown size={14} /> : <Minus size={14} />}
             {trendValue}
           </div>
         )}
       </div>
       <div>
-        <p className="text-2xl font-bold text-white">{value}</p>
-        <p className="text-sm text-gray-400">{title}</p>
-        {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
+        <p className="text-2xl font-bold text-black">{value}</p>
+        <p className="text-sm text-black">{title}</p>
+        {subtitle && <p className="text-xs text-black mt-0.5">{subtitle}</p>}
       </div>
     </motion.div>
   );
