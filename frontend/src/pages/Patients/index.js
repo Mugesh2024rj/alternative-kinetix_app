@@ -183,7 +183,7 @@ const Patients = () => {
                     <tr><td colSpan={7}><EmptyState message="No patients found" /></td></tr>
                   ) : patients.map(p => (
                     <tr key={p.id} className="table-row">
-                      <td className="table-cell"><p className="font-medium text-[#111827]">{p.full_name}</p><p className="text-xs text-[#9CA3AF]">{p.phone}</p></td>
+                      <td className="table-cell"><p className="font-medium text-[#111827]">{p.full_name}</p><p className="text-xs text-[#9CA3AF]">{p.patient_code && <span className="mr-1 text-[#1F4D3E] font-semibold">{p.patient_code}</span>}{p.phone}</p></td>
                       <td className="table-cell text-[#374151]">{p.age} / {p.gender}</td>
                       <td className="table-cell max-w-[200px] truncate text-[#374151]">{p.condition}</td>
                       <td className="table-cell text-[#374151]">{p.doctor_name || '-'}</td>

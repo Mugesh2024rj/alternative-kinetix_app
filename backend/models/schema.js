@@ -20,6 +20,7 @@ const createTables = async () => {
       id SERIAL PRIMARY KEY,
       user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
       full_name VARCHAR(255) NOT NULL,
+      doctor_code VARCHAR(50),
       specialisation VARCHAR(255),
       phone VARCHAR(50),
       email VARCHAR(255),
@@ -34,6 +35,7 @@ const createTables = async () => {
     `CREATE TABLE IF NOT EXISTS patients (
       id SERIAL PRIMARY KEY,
       full_name VARCHAR(255) NOT NULL,
+      patient_code VARCHAR(30),
       age INTEGER,
       gender VARCHAR(20),
       condition VARCHAR(500),
@@ -210,6 +212,38 @@ const createTables = async () => {
   for (const query of queries) {
     await pool.query(query);
   }
+
+  // Add doctor_code column if upgrading an existing database
+  await pool.query(`
+    ALTER TABLE doctors ADD COLUMN IF NOT EXISTS doctor_code VARCHAR(50)
+  `);
+
+  // Apply partial unique indexes — safe to run every startup (IF NOT EXISTS)
+  // Partial indexes allow NULL values so optional fields are not affected
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_doctor_email
+    ON doctors (email) WHERE email IS NOT NULL
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_doctor_phone
+    ON doctors (phone) WHERE phone IS NOT NULL
+  `);
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_doctor_code
+    ON doctors (doctor_code) WHERE doctor_code IS NOT NULL
+  `);
+
+  // Add patient_code column if upgrading an existing database
+  await pool.query(`
+    ALTER TABLE patients ADD COLUMN IF NOT EXISTS patient_code VARCHAR(30)
+  `);
+
+  // Unique index on patient_code — partial so NULL values are allowed
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_patient_code
+    ON patients (patient_code) WHERE patient_code IS NOT NULL
+  `);
+
   console.log('All tables created successfully');
 };
 
@@ -230,15 +264,20 @@ const seedData = async () => {
     ON CONFLICT (username) DO NOTHING
   `, [doctorHash]);
 
-  await pool.query(`
-    INSERT INTO doctors (full_name, specialisation, phone, email, status, patient_count, house_visit_count, satisfaction_score)
-    VALUES 
-      ('Dr. John Smith', 'Physiotherapy', '+1-555-0101', 'smith@kinetix.com', 'active', 12, 3, 4.5),
-      ('Dr. Sarah Johnson', 'Neurology', '+1-555-0102', 'johnson@kinetix.com', 'active', 8, 1, 4.8),
-      ('Dr. Michael Chen', 'Rehabilitation', '+1-555-0103', 'chen@kinetix.com', 'leave', 5, 0, 4.2),
-      ('Dr. Emily Davis', 'Pain Management', '+1-555-0104', 'davis@kinetix.com', 'active', 15, 5, 4.7)
-    ON CONFLICT DO NOTHING
-  `);
+  // Insert seed doctors one by one using ON CONFLICT on email to prevent duplicates
+  const seedDoctors = [
+    ['Dr. John Smith', 'Physiotherapy', '+1-555-0101', 'smith@kinetix.com', 'active', 12, 3, 4.5],
+    ['Dr. Sarah Johnson', 'Neurology', '+1-555-0102', 'johnson@kinetix.com', 'active', 8, 1, 4.8],
+    ['Dr. Michael Chen', 'Rehabilitation', '+1-555-0103', 'chen@kinetix.com', 'leave', 5, 0, 4.2],
+    ['Dr. Emily Davis', 'Pain Management', '+1-555-0104', 'davis@kinetix.com', 'active', 15, 5, 4.7],
+  ];
+  for (const d of seedDoctors) {
+    await pool.query(`
+      INSERT INTO doctors (full_name, specialisation, phone, email, status, patient_count, house_visit_count, satisfaction_score)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      ON CONFLICT (email) DO NOTHING
+    `, d);
+  }
 
   await pool.query(`
     INSERT INTO patients (full_name, age, gender, condition, assigned_doctor_id, status, last_visit, admission_date)
