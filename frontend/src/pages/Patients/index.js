@@ -176,14 +176,15 @@ const Patients = () => {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="border-b border-[#E5E7EB]">
-                  <tr>{['Name', 'Age/Gender', 'Condition', 'Assigned Doctor', 'Last Visit', 'Status', 'Action'].map(h => <th key={h} className="table-header">{h}</th>)}</tr>
+                  <tr>{['Patient ID', 'Name', 'Age/Gender', 'Condition', 'Assigned Doctor', 'Last Visit', 'Status', 'Action'].map(h => <th key={h} className="table-header">{h}</th>)}</tr>
                 </thead>
                 <tbody>
                   {patients.length === 0 ? (
-                    <tr><td colSpan={7}><EmptyState message="No patients found" /></td></tr>
+                    <tr><td colSpan={8}><EmptyState message="No patients found" /></td></tr>
                   ) : patients.map(p => (
                     <tr key={p.id} className="table-row">
-                      <td className="table-cell"><p className="font-medium text-[#111827]">{p.full_name}</p><p className="text-xs text-[#9CA3AF]">{p.patient_code && <span className="mr-1 text-[#1F4D3E] font-semibold">{p.patient_code}</span>}{p.phone}</p></td>
+                      <td className="table-cell font-medium text-[#1F4D3E]">#{p.id}{p.patient_code && <span className="block text-xs text-[#6B7280] font-normal">{p.patient_code}</span>}</td>
+                      <td className="table-cell"><p className="font-medium text-[#111827]">{p.full_name}</p><p className="text-xs text-[#9CA3AF]">{p.phone}</p></td>
                       <td className="table-cell text-[#374151]">{p.age} / {p.gender}</td>
                       <td className="table-cell max-w-[200px] truncate text-[#374151]">{p.condition}</td>
                       <td className="table-cell text-[#374151]">{p.doctor_name || '-'}</td>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { UserCheck, Home, CalendarDays, Clock, Star, Plus, Search, Check, X, Eye, Users } from 'lucide-react';
+import { UserCheck, Home, CalendarDays, Clock, Plus, Search, Check, X, Eye, Users, LogOut } from 'lucide-react';
 import Layout from '../../components/layout/Layout';
 import MetricCard from '../../components/ui/MetricCard';
 import Modal from '../../components/ui/Modal';
@@ -139,7 +139,7 @@ const Doctors = () => {
           <MetricCard title="House Visits Today" value={metrics?.house_visits_today || 0} icon={Home} color="primary" />
           <MetricCard title="Outside Events" value={metrics?.outside_events || 0} icon={CalendarDays} color="info" />
           <MetricCard title="Pending Approvals" value={metrics?.pending_approvals || 0} icon={Clock} color="warning" />
-          <MetricCard title="Patient Satisfaction" value={`${metrics?.patient_satisfaction || '0.00'}/5`} icon={Star} color="purple" />
+          <MetricCard title="Doctors on Leave" value={metrics?.doctors_on_leave || 0} icon={LogOut} color="danger" />
         </div>
 
         <div className="flex gap-2 border-b border-[#E5E7EB]">

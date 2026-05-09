@@ -71,19 +71,19 @@ const checkDoctorDuplicate = async (email, phone, doctor_code, excludeId = null)
 // ─────────────────────────────────────────────
 const getDoctorMetrics = async (req, res) => {
   try {
-    const [present, houseVisits, outsideEvents, pendingApprovals, satisfaction] = await Promise.all([
+    const [present, houseVisits, outsideEvents, pendingApprovals, onLeave] = await Promise.all([
       pool.query("SELECT COUNT(*) FROM doctors WHERE status = 'active'"),
       pool.query("SELECT COUNT(*) FROM house_visits WHERE DATE(visit_date) = CURRENT_DATE"),
       pool.query("SELECT COUNT(*) FROM event_assignments ea JOIN events e ON ea.event_id = e.id WHERE DATE(e.event_date) = CURRENT_DATE"),
       pool.query("SELECT COUNT(*) FROM house_visits WHERE status = 'pending'"),
-      pool.query('SELECT COALESCE(AVG(satisfaction_score),0) as avg FROM doctors WHERE status = $1', ['active'])
+      pool.query("SELECT COUNT(*) FROM doctors WHERE status = 'leave'")
     ]);
     res.json({
-      present_doctors:      parseInt(present.rows[0].count),
-      house_visits_today:   parseInt(houseVisits.rows[0].count),
-      outside_events:       parseInt(outsideEvents.rows[0].count),
-      pending_approvals:    parseInt(pendingApprovals.rows[0].count),
-      patient_satisfaction: parseFloat(satisfaction.rows[0].avg).toFixed(2)
+      present_doctors:   parseInt(present.rows[0].count),
+      house_visits_today: parseInt(houseVisits.rows[0].count),
+      outside_events:    parseInt(outsideEvents.rows[0].count),
+      pending_approvals: parseInt(pendingApprovals.rows[0].count),
+      doctors_on_leave:  parseInt(onLeave.rows[0].count)
     });
   } catch (err) {
     console.error('getDoctorMetrics error:', err.message);

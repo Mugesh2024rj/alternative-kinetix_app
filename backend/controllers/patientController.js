@@ -72,9 +72,9 @@ const checkPatientDuplicate = async (full_name, age, gender, excludeId = null) =
 const getPatientMetrics = async (req, res) => {
   try {
     const [visited, inHouse, cancelled, discharged] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM appointments WHERE DATE(appointment_time) = CURRENT_DATE'),
+      pool.query("SELECT COUNT(DISTINCT patient_id) FROM appointments WHERE status = 'done'"),
       pool.query("SELECT COUNT(*) FROM patients WHERE status = 'in-house'"),
-      pool.query("SELECT COUNT(*) FROM appointments WHERE status = 'cancelled' AND DATE(appointment_time) = CURRENT_DATE"),
+      pool.query("SELECT COUNT(*) FROM patients WHERE status = 'cancelled'"),
       pool.query("SELECT COUNT(*) FROM patients WHERE status = 'discharged'")
     ]);
     res.json({

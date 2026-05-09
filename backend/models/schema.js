@@ -233,16 +233,64 @@ const createTables = async () => {
     ON doctors (doctor_code) WHERE doctor_code IS NOT NULL
   `);
 
-  // Add patient_code column if upgrading an existing database
+  // ─── PATIENT CODE MIGRATION ───────────────────────────────────────────────
+  // Step 1: Add patient_code column if it doesn't exist yet (safe on fresh DB)
   await pool.query(`
     ALTER TABLE patients ADD COLUMN IF NOT EXISTS patient_code VARCHAR(30)
   `);
 
-  // Unique index on patient_code — partial so NULL values are allowed
+  // Step 2: Delete old duplicate/seed rows that have no patient_code.
+  //         These are legacy rows inserted before the patient_code system existed.
+  //         We only delete them if they have no appointments, handovers, or
+  //         assessments linked — so no real clinical data is lost.
+  await pool.query(`
+    DELETE FROM patients
+    WHERE patient_code IS NULL
+      AND id NOT IN (SELECT DISTINCT patient_id FROM appointments WHERE patient_id IS NOT NULL)
+      AND id NOT IN (SELECT DISTINCT patient_id FROM handovers   WHERE patient_id IS NOT NULL)
+      AND id NOT IN (SELECT DISTINCT patient_id FROM assessments WHERE patient_id IS NOT NULL)
+      AND id NOT IN (SELECT DISTINCT patient_id FROM house_visits WHERE patient_id IS NOT NULL)
+  `);
+
+  // Step 3: For any remaining rows that still have NULL patient_code
+  //         (i.e. they have linked clinical data so we kept them),
+  //         auto-assign a patient_code so we can enforce NOT NULL.
+  const orphans = await pool.query(
+    `SELECT id FROM patients WHERE patient_code IS NULL ORDER BY id ASC`
+  );
+  for (const row of orphans.rows) {
+    // Find the current highest PAT-N number and increment
+    const last = await pool.query(`
+      SELECT patient_code FROM patients
+      WHERE patient_code LIKE 'PAT-%'
+      ORDER BY CAST(SUBSTRING(patient_code FROM 5) AS INTEGER) DESC
+      LIMIT 1
+    `);
+    const nextNum = last.rows.length === 0
+      ? 1
+      : parseInt(last.rows[0].patient_code.replace('PAT-', ''), 10) + 1;
+    await pool.query(
+      `UPDATE patients SET patient_code = $1 WHERE id = $2`,
+      [`PAT-${nextNum}`, row.id]
+    );
+  }
+
+  // Step 4: Now that every row has a patient_code, enforce NOT NULL
+  await pool.query(`
+    ALTER TABLE patients ALTER COLUMN patient_code SET NOT NULL
+  `);
+
+  // Step 5: Unique index on patient_code (no longer partial — all rows have a value)
+  await pool.query(`
+    DROP INDEX IF EXISTS idx_unique_patient_code
+  `);
   await pool.query(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_patient_code
-    ON patients (patient_code) WHERE patient_code IS NOT NULL
+    ON patients (patient_code)
   `);
+
+  console.log('Patient code migration complete');
+  // ─────────────────────────────────────────────────────────────────────────────
 
   console.log('All tables created successfully');
 };
@@ -280,13 +328,13 @@ const seedData = async () => {
   }
 
   await pool.query(`
-    INSERT INTO patients (full_name, age, gender, condition, assigned_doctor_id, status, last_visit, admission_date)
+    INSERT INTO patients (full_name, patient_code, age, gender, condition, assigned_doctor_id, status, last_visit, admission_date)
     VALUES
-      ('Alice Thompson', 45, 'Female', 'Lower back pain', 1, 'active', NOW() - INTERVAL '2 days', NOW() - INTERVAL '30 days'),
-      ('Bob Martinez', 62, 'Male', 'Post-stroke rehabilitation', 2, 'in-house', NOW() - INTERVAL '1 day', NOW() - INTERVAL '15 days'),
-      ('Carol White', 38, 'Female', 'Sports injury - knee', 1, 'active', NOW() - INTERVAL '5 days', NOW() - INTERVAL '45 days'),
-      ('David Brown', 55, 'Male', 'Chronic pain syndrome', 4, 'active', NOW(), NOW() - INTERVAL '60 days'),
-      ('Emma Wilson', 29, 'Female', 'Neurological assessment', 2, 'active', NOW() - INTERVAL '3 days', NOW() - INTERVAL '20 days')
+      ('Alice Thompson',  'PAT-1', 45, 'Female', 'Lower back pain',              1, 'active',   NOW() - INTERVAL '2 days',  NOW() - INTERVAL '30 days'),
+      ('Bob Martinez',    'PAT-2', 62, 'Male',   'Post-stroke rehabilitation',   2, 'in-house', NOW() - INTERVAL '1 day',   NOW() - INTERVAL '15 days'),
+      ('Carol White',     'PAT-3', 38, 'Female', 'Sports injury - knee',         1, 'active',   NOW() - INTERVAL '5 days',  NOW() - INTERVAL '45 days'),
+      ('David Brown',     'PAT-4', 55, 'Male',   'Chronic pain syndrome',        4, 'active',   NOW(),                      NOW() - INTERVAL '60 days'),
+      ('Emma Wilson',     'PAT-5', 29, 'Female', 'Neurological assessment',      2, 'active',   NOW() - INTERVAL '3 days',  NOW() - INTERVAL '20 days')
     ON CONFLICT DO NOTHING
   `);
 
