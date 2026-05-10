@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Activity, Star, XCircle, Clock, TrendingUp, TrendingDown } from 'lucide-react';
+import { Activity, Star, XCircle, Clock, TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import Layout from '../../components/layout/Layout';
 import MetricCard from '../../components/ui/MetricCard';
@@ -22,21 +22,49 @@ const Performance = () => {
   const [satisfaction, setSatisfaction] = useState([]);
   const [doctorIndex, setDoctorIndex] = useState([]);
   const [trends, setTrends] = useState([]);
+  const [completedAppts, setCompletedAppts] = useState([]);
   const [period, setPeriod] = useState('monthly');
   const [loading, setLoading] = useState(true);
+  const [recalculating, setRecalculating] = useState(false);
 
   const fetchData = async () => {
     try {
-      const [m, tb, sat, di, tr] = await Promise.all([
+      const [m, tb, sat, di, tr, ca] = await Promise.all([
         api.get('/performance/metrics'),
         api.get('/performance/appointment-types'),
         api.get('/performance/satisfaction'),
         api.get('/performance/doctor-index'),
         api.get('/performance/session-trends', { params: { period } }),
+        api.get('/performance/completed-appointments'),
       ]);
-      setMetrics(m.data); setTypeBreakdown(tb.data); setSatisfaction(sat.data); setDoctorIndex(di.data); setTrends(tr.data);
+      setMetrics(m.data);
+      setTypeBreakdown(tb.data);
+      setSatisfaction(sat.data);
+      setTrends(tr.data);
+      setCompletedAppts(ca.data);
+
+      const index = di.data;
+      // If all doctors have 0 total_points, auto-seed from existing DB data
+      const allZero = index.every(d => parseInt(d.total_points) === 0);
+      if (allZero && index.length > 0) {
+        await api.post('/performance/recalculate-all');
+        const fresh = await api.get('/performance/doctor-index');
+        setDoctorIndex(fresh.data);
+      } else {
+        setDoctorIndex(index);
+      }
     } catch {}
     setLoading(false);
+  };
+
+  const handleRecalculate = async () => {
+    setRecalculating(true);
+    try {
+      await api.post('/performance/recalculate-all');
+      const fresh = await api.get('/performance/doctor-index');
+      setDoctorIndex(fresh.data);
+    } catch {}
+    setRecalculating(false);
   };
 
   useEffect(() => { fetchData(); }, [period]);
@@ -87,6 +115,19 @@ const Performance = () => {
         </div>
 
         <div className="card p-5">
+          <h3 className="font-semibold text-[#111827] mb-4">Completed Appointments by Doctor</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={completedAppts}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis dataKey="doctor" tick={{ fill: '#6B7280', fontSize: 10 }} tickFormatter={v => v.split(' ').pop()} />
+              <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} allowDecimals={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="completed" fill="#10b981" radius={[4, 4, 0, 0]} name="Completed" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="card p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-[#111827]">Session Trends</h3>
             <div className="flex bg-[#F3F4F6] rounded-lg p-1 gap-1">
@@ -110,29 +151,57 @@ const Performance = () => {
         </div>
 
         <div className="card">
-          <div className="p-4 border-b border-[#E5E7EB]"><h3 className="font-semibold text-[#111827]">Doctor Performance Index</h3></div>
+          <div className="p-4 border-b border-[#E5E7EB]">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-[#111827]">Doctor Performance Index</h3>
+                <p className="text-xs text-[#6B7280] mt-1">Points: +10 per completed appointment · +15 per completed event · feedback×20 · -10 per pending handover</p>
+              </div>
+              <button
+                onClick={handleRecalculate}
+                disabled={recalculating}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-[#1F4D3E] text-white rounded-lg hover:bg-[#163d30] disabled:opacity-50 transition-colors"
+              >
+                <RefreshCw size={12} className={recalculating ? 'animate-spin' : ''} />
+                {recalculating ? 'Updating...' : 'Recalculate Points'}
+              </button>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="border-b border-[#E5E7EB]">
-                <tr>{['Doctor', 'Specialty', 'Sessions', 'On-Time %', 'Feedback Score', 'Handover Penalty', 'Score', 'Trend'].map(h => <th key={h} className="table-header">{h}</th>)}</tr>
+                <tr>
+                  {['Doctor', 'Specialty', 'Sessions', 'Completed Appts', 'Events', 'Appt Pts', 'Event Pts', 'Feedback Pts', 'Penalty', 'Total Points', 'Trend'].map(h => (
+                    <th key={h} className="table-header">{h}</th>
+                  ))}
+                </tr>
               </thead>
               <tbody>
                 {doctorIndex.map(doc => {
-                  const score = ((doc.sessions_completed * 0.4) + (doc.on_time_percentage * 0.3) + (doc.feedback_score * 20 * 0.3) - (doc.handover_penalty * 5)).toFixed(1);
-                  const trend = score > 70 ? 'up' : score > 40 ? 'neutral' : 'down';
+                  const total = parseInt(doc.total_points) || 0;
+                  const trend = total > 100 ? 'up' : total > 40 ? 'neutral' : 'down';
                   return (
                     <tr key={doc.id} className="table-row">
                       <td className="table-cell font-medium text-[#111827]">{doc.full_name}</td>
                       <td className="table-cell text-[#374151]">{doc.specialisation}</td>
                       <td className="table-cell text-[#374151]">{doc.sessions_completed}</td>
-                      <td className="table-cell text-[#374151]">{doc.on_time_percentage || 0}%</td>
-                      <td className="table-cell"><StarRating rating={doc.feedback_score} /></td>
-                      <td className="table-cell text-red-600">-{doc.handover_penalty}</td>
+                      <td className="table-cell text-[#374151]">{doc.sessions_completed}</td>
+                      <td className="table-cell text-[#374151]">{doc.events_participated || 0}</td>
+                      <td className="table-cell text-emerald-600">+{doc.appointment_points || 0}</td>
+                      <td className="table-cell text-blue-600">+{doc.event_points || 0}</td>
+                      <td className="table-cell text-amber-600">+{doc.feedback_points || 0}</td>
+                      <td className="table-cell text-red-600">-{doc.penalty_points || 0}</td>
                       <td className="table-cell">
-                        <span className={`font-bold ${score > 70 ? 'text-emerald-600' : score > 40 ? 'text-[#B45309]' : 'text-red-600'}`}>{score}</span>
+                        <span className={`font-bold text-sm ${total > 100 ? 'text-emerald-600' : total > 40 ? 'text-[#B45309]' : 'text-red-600'}`}>
+                          {total}
+                        </span>
                       </td>
                       <td className="table-cell">
-                        {trend === 'up' ? <TrendingUp size={16} className="text-emerald-600" /> : trend === 'down' ? <TrendingDown size={16} className="text-red-500" /> : <span className="text-[#9CA3AF]">—</span>}
+                        {trend === 'up'
+                          ? <TrendingUp size={16} className="text-emerald-600" />
+                          : trend === 'down'
+                            ? <TrendingDown size={16} className="text-red-500" />
+                            : <span className="text-[#9CA3AF]">—</span>}
                       </td>
                     </tr>
                   );

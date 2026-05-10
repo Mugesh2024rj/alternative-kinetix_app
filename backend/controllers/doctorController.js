@@ -74,16 +74,25 @@ const getDoctorMetrics = async (req, res) => {
     const [present, houseVisits, outsideEvents, pendingApprovals, onLeave] = await Promise.all([
       pool.query("SELECT COUNT(*) FROM doctors WHERE status = 'active'"),
       pool.query("SELECT COUNT(*) FROM house_visits WHERE DATE(visit_date) = CURRENT_DATE"),
-      pool.query("SELECT COUNT(*) FROM event_assignments ea JOIN events e ON ea.event_id = e.id WHERE DATE(e.event_date) = CURRENT_DATE"),
+      // Count distinct doctors assigned to non-cancelled events happening today
+      pool.query(`
+        SELECT COUNT(DISTINCT d.id)
+        FROM doctors d
+        JOIN users u ON u.id = d.user_id
+        JOIN event_assignments ea ON ea.user_id = u.id
+        JOIN events e ON ea.event_id = e.id
+        WHERE DATE(e.event_date) = CURRENT_DATE
+          AND e.status != 'cancelled'
+      `),
       pool.query("SELECT COUNT(*) FROM house_visits WHERE status = 'pending'"),
       pool.query("SELECT COUNT(*) FROM doctors WHERE status = 'leave'")
     ]);
     res.json({
-      present_doctors:   parseInt(present.rows[0].count),
+      present_doctors:    parseInt(present.rows[0].count),
       house_visits_today: parseInt(houseVisits.rows[0].count),
-      outside_events:    parseInt(outsideEvents.rows[0].count),
-      pending_approvals: parseInt(pendingApprovals.rows[0].count),
-      doctors_on_leave:  parseInt(onLeave.rows[0].count)
+      outside_events:     parseInt(outsideEvents.rows[0].count),
+      pending_approvals:  parseInt(pendingApprovals.rows[0].count),
+      doctors_on_leave:   parseInt(onLeave.rows[0].count)
     });
   } catch (err) {
     console.error('getDoctorMetrics error:', err.message);
@@ -101,7 +110,15 @@ const getDoctors = async (req, res) => {
       SELECT d.*,
         (SELECT COUNT(*) FROM appointments a
          WHERE a.doctor_id = d.id AND DATE(a.appointment_time) = CURRENT_DATE
-        ) as today_appointments
+        ) as today_appointments,
+        -- Fetch today's non-cancelled event name for this doctor (via user_id link)
+        (SELECT e.title FROM events e
+         JOIN event_assignments ea ON ea.event_id = e.id
+         WHERE ea.user_id = d.user_id
+           AND DATE(e.event_date) = CURRENT_DATE
+           AND e.status != 'cancelled'
+         LIMIT 1
+        ) as today_event
       FROM doctors d WHERE 1=1
     `;
     const params = [];

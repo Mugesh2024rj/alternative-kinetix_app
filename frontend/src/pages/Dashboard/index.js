@@ -11,6 +11,7 @@ import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSa
 const VirtualCalendar = ({ calendar }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const today = new Date();
 
   const monthStart = startOfMonth(currentMonth);
@@ -28,22 +29,40 @@ const VirtualCalendar = ({ calendar }) => {
   const selectedEvents = selectedDay ? getEventsForDay(selectedDay) : getEventsForDay(today);
   const displayDay = selectedDay || today;
 
+  // When day changes, clear selected event
+  const handleDayClick = (day) => {
+    setSelectedEvent(null);
+    setSelectedDay(isSameDay(day, selectedDay) ? null : day);
+  };
+
+  // Status color map matching existing badge system
+  const statusBg = {
+    upcoming:    'bg-[#DBEAFE] text-[#1D4ED8]',
+    ongoing:     'bg-[#D1FAE5] text-[#065F46]',
+    completed:   'bg-[#D1FAE5] text-[#065F46]',
+    cancelled:   'bg-[#FEE2E2] text-[#991B1B]',
+    scheduled:   'bg-[#DBEAFE] text-[#1D4ED8]',
+    done:        'bg-[#D1FAE5] text-[#065F46]',
+    'in-progress': 'bg-[#EDE9FE] text-[#5B21B6]',
+  };
+
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-[#111827]">Events Calendar</h2>
         <div className="flex items-center gap-2">
-          <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 rounded hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-colors">
+          <button onClick={() => { setCurrentMonth(subMonths(currentMonth, 1)); setSelectedEvent(null); }} className="p-1 rounded hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-colors">
             <ChevronLeft size={16} />
           </button>
           <span className="text-sm font-medium text-[#111827] w-32 text-center">{format(currentMonth, 'MMMM yyyy')}</span>
-          <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 rounded hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-colors">
+          <button onClick={() => { setCurrentMonth(addMonths(currentMonth, 1)); setSelectedEvent(null); }} className="p-1 rounded hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-colors">
             <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* ── Calendar grid ── */}
         <div className="lg:col-span-2">
           <div className="grid grid-cols-7 mb-2">
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(day => (
@@ -60,7 +79,7 @@ const VirtualCalendar = ({ calendar }) => {
               return (
                 <button
                   key={i}
-                  onClick={() => setSelectedDay(isSameDay(day, selectedDay) ? null : day)}
+                  onClick={() => handleDayClick(day)}
                   className={`group relative flex flex-col items-center justify-start p-1 rounded-lg min-h-[56px] transition-all duration-200
                     ${ isSelected
                         ? 'bg-[#1F4D3E] text-white shadow-lg'
@@ -96,25 +115,114 @@ const VirtualCalendar = ({ calendar }) => {
           </div>
         </div>
 
-        <div>
-          <h3 className="text-sm font-medium text-[#6B7280] mb-3">
-            {format(displayDay, 'MMMM d, yyyy')}{isSameDay(displayDay, today) ? ' — Today' : ''}
-          </h3>
+        {/* ── Right panel: event list or event detail ── */}
+        <div className="flex flex-col min-h-0">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-[#6B7280]">
+              {format(displayDay, 'MMM d, yyyy')}
+              {isSameDay(displayDay, today) ? <span className="ml-1 text-[#1F4D3E] font-semibold">— Today</span> : ''}
+            </h3>
+            {/* Back button — only visible when an event is expanded */}
+            {selectedEvent && (
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="text-xs text-[#6B7280] hover:text-[#111827] flex items-center gap-1 transition-colors"
+              >
+                <ChevronLeft size={13} /> Back
+              </button>
+            )}
+          </div>
+
           {selectedEvents.length === 0 ? (
             <p className="text-[#9CA3AF] text-sm py-4 text-center">No events this day</p>
+          ) : selectedEvent ? (
+            /* ── Expanded event detail view ── */
+            <motion.div
+              key={selectedEvent.title}
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.18 }}
+              className="flex-1 overflow-y-auto"
+            >
+              {/* Title banner */}
+              <div className="p-4 bg-[#1F4D3E] rounded-xl mb-3">
+                <p className="text-white font-semibold text-sm leading-snug">{selectedEvent.title}</p>
+                {selectedEvent.type && (
+                  <span className="inline-block mt-1.5 text-[10px] font-medium bg-white/20 text-white px-2 py-0.5 rounded-full">
+                    {selectedEvent.type}
+                  </span>
+                )}
+              </div>
+
+              {/* Detail rows */}
+              <div className="space-y-2">
+                {/* Status */}
+                <div className="flex items-center justify-between px-3 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
+                  <span className="text-xs text-[#6B7280] font-medium">Status</span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    statusBg[selectedEvent.status] || 'bg-[#F3F4F6] text-[#374151]'
+                  }`}>{selectedEvent.status}</span>
+                </div>
+
+                {/* Start time */}
+                <div className="flex items-center justify-between px-3 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
+                  <span className="text-xs text-[#6B7280] font-medium">Start</span>
+                  <span className="text-xs font-semibold text-[#111827]">
+                    {format(new Date(selectedEvent.start), 'MMM d, yyyy')}
+                    <span className="ml-1 text-[#1F4D3E]">{format(new Date(selectedEvent.start), 'h:mm a')}</span>
+                  </span>
+                </div>
+
+                {/* End time — only if present */}
+                {selectedEvent.end && (
+                  <div className="flex items-center justify-between px-3 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
+                    <span className="text-xs text-[#6B7280] font-medium">End</span>
+                    <span className="text-xs font-semibold text-[#111827]">
+                      {format(new Date(selectedEvent.end), 'MMM d, yyyy')}
+                      <span className="ml-1 text-[#1F4D3E]">{format(new Date(selectedEvent.end), 'h:mm a')}</span>
+                    </span>
+                  </div>
+                )}
+
+                {/* Type */}
+                {selectedEvent.type && (
+                  <div className="flex items-center justify-between px-3 py-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
+                    <span className="text-xs text-[#6B7280] font-medium">Type</span>
+                    <span className="text-xs font-semibold text-[#111827]">{selectedEvent.type}</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            /* ── Event list for selected day ── */
+            <motion.div
+              key={displayDay.toISOString()}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.15 }}
+              className="space-y-2 max-h-64 overflow-y-auto pr-1"
+            >
               {selectedEvents.map((event, i) => (
-                <div key={i} className="p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                  <p className="text-sm font-medium text-[#111827] truncate">{event.title}</p>
+                <button
+                  key={i}
+                  onClick={() => setSelectedEvent(event)}
+                  className="w-full text-left p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB] hover:border-[#1F4D3E]/30 hover:bg-[#E8F0EF] hover:shadow-sm transition-all duration-150 group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium text-[#111827] truncate group-hover:text-[#1F4D3E] transition-colors">{event.title}</p>
+                    <ChevronRight size={14} className="text-[#9CA3AF] group-hover:text-[#1F4D3E] shrink-0 mt-0.5 transition-colors" />
+                  </div>
                   <p className="text-xs text-[#6B7280] mt-1">{format(new Date(event.start), 'h:mm a')}</p>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs text-[#1F4D3E] font-medium">{event.type}</span>
-                    <StatusBadge status={event.status} />
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                      statusBg[event.status] || 'bg-[#F3F4F6] text-[#374151]'
+                    }`}>{event.status}</span>
                   </div>
-                </div>
+                </button>
               ))}
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

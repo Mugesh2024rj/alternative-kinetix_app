@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { recalculateDoctorPoints } = require('../services/performanceService');
 
 const getAppointments = async (req, res) => {
   try {
@@ -50,7 +51,12 @@ const updateAppointment = async (req, res) => {
       'UPDATE appointments SET status=$1, notes=$2, cancellation_reason=$3, substitute_doctor_id=$4, appointment_time=$5, duration=$6, type=$7, updated_at=NOW() WHERE id=$8 RETURNING *',
       [status, notes, cancellation_reason, substitute_doctor_id, appointment_time, duration, type, req.params.id]
     );
-    res.json(result.rows[0]);
+    const appt = result.rows[0];
+    // When appointment is marked done, recalculate that doctor's points
+    if (status === 'done' && appt && appt.doctor_id) {
+      await recalculateDoctorPoints(appt.doctor_id);
+    }
+    res.json(appt);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

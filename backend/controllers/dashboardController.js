@@ -65,6 +65,7 @@ const getCalendarEvents = async (req, res) => {
       SELECT id, title, event_date as start, end_date as end, type, status
       FROM events
       WHERE EXTRACT(MONTH FROM event_date) = $1 AND EXTRACT(YEAR FROM event_date) = $2
+        AND status != 'cancelled'
       UNION ALL
       SELECT id, CONCAT('Appt: ', (SELECT full_name FROM patients WHERE id = patient_id)) as title,
              appointment_time as start, appointment_time + (duration || ' minutes')::interval as end,

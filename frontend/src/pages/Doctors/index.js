@@ -193,7 +193,16 @@ const Doctors = () => {
                           <span className="text-xs text-[#6B7280]">{doc.today_appointments || 0} today</span>
                         </div>
                       </td>
-                      <td className="table-cell"><StatusBadge status={doc.status} /></td>
+                      <td className="table-cell">
+                        <div className="flex flex-col gap-1">
+                          <StatusBadge status={doc.status} />
+                          {doc.today_event && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-300 px-1.5 py-0.5 rounded-full w-fit">
+                              OD · {doc.today_event}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="table-cell">
                         <div className="flex items-center gap-2">
                           <button onClick={() => { setEditDoctor(doc); setModal('edit'); }} className="text-xs text-[#1F4D3E] hover:underline font-medium">Edit</button>

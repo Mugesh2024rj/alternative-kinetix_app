@@ -113,6 +113,7 @@ const Appointments = () => {
   const [viewMode, setViewMode] = useState('day');
   const [modal, setModal] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [now, setNow] = useState(new Date());
 
   const fetchData = async () => {
     try {
@@ -128,6 +129,30 @@ const Appointments = () => {
 
   useEffect(() => { fetchData(); }, [search, statusFilter, typeFilter, viewMode]);
 
+  // Real-time clock — ticks every 60s to re-evaluate which appointments are past
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // An appointment is considered "past" if its end time has passed
+  // and its status is still scheduled or in-progress (not yet marked done by backend)
+  const isPastAppt = (appt) => {
+    const end = new Date(new Date(appt.appointment_time).getTime() + (appt.duration || 30) * 60000);
+    return now > end;
+  };
+
+  // Active: scheduled/in-progress that haven't ended yet
+  const activeAppts = appointments.filter(a =>
+    (a.status === 'scheduled' || a.status === 'in-progress') && !isPastAppt(a)
+  );
+
+  // History: done, cancelled, OR time has passed (real-time completed)
+  const historyAppts = appointments.filter(a =>
+    a.status === 'done' || a.status === 'cancelled' ||
+    ((a.status === 'scheduled' || a.status === 'in-progress') && isPastAppt(a))
+  );
+
   const getActionButton = (appt) => {
     if (appt.status === 'done') return <button onClick={() => { setSelected(appt); setModal('notes'); }} className="text-xs text-emerald-600 hover:underline font-medium flex items-center gap-1"><FileText size={12} /> Notes</button>;
     if (appt.status === 'in-progress') return <button onClick={() => { setSelected(appt); setModal('manage'); }} className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-1"><Settings2 size={12} /> Manage</button>;
@@ -136,11 +161,20 @@ const Appointments = () => {
     return null;
   };
 
+  // Status label for history rows — show "completed" for time-passed ones
+  const historyStatus = (appt) => {
+    if (appt.status === 'done') return { label: 'done', cls: 'bg-[#D1FAE5] text-[#065F46]' };
+    if (appt.status === 'cancelled') return { label: 'cancelled', cls: 'bg-[#FEE2E2] text-[#991B1B]' };
+    return { label: 'completed', cls: 'bg-[#D1FAE5] text-[#065F46]' };
+  };
+
   if (loading) return <Layout title="Appointments"><Spinner /></Layout>;
 
   return (
     <Layout title="Appointments">
-      <div className="space-y-6">
+      <div className="space-y-8">
+
+        {/* ── Active Appointments table ── */}
         <div className="card">
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 border-b border-[#E5E7EB]">
             <div className="flex items-center gap-3 flex-wrap">
@@ -165,9 +199,9 @@ const Appointments = () => {
                 <tr>{['Time', 'Patient Name', 'Type', 'Doctor Name', 'Duration', 'Status', 'Actions'].map(h => <th key={h} className="table-header">{h}</th>)}</tr>
               </thead>
               <tbody>
-                {appointments.length === 0 ? (
-                  <tr><td colSpan={7}><EmptyState message="No appointments found" /></td></tr>
-                ) : appointments.map(appt => (
+                {activeAppts.length === 0 ? (
+                  <tr><td colSpan={7}><EmptyState message="No active appointments" /></td></tr>
+                ) : activeAppts.map(appt => (
                   <tr key={appt.id} className="table-row">
                     <td className="table-cell text-xs text-[#6B7280]">{format(new Date(appt.appointment_time), 'MMM d, h:mm a')}</td>
                     <td className="table-cell"><p className="font-medium text-[#111827]">{appt.patient_name}</p><p className="text-xs text-[#9CA3AF]">{appt.age} / {appt.gender}</p></td>
@@ -182,6 +216,49 @@ const Appointments = () => {
             </table>
           </div>
         </div>
+
+        {/* ── Appointment History Panel ── */}
+        {historyAppts.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-[#E5E7EB]" />
+              <div className="flex items-center gap-2 px-3 py-1 bg-[#F3F4F6] border border-[#E5E7EB] rounded-full">
+                <Calendar size={13} className="text-[#6B7280]" />
+                <span className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Appointment History</span>
+                <span className="text-xs font-bold text-white bg-[#6B7280] px-1.5 py-0.5 rounded-full">{historyAppts.length}</span>
+              </div>
+              <div className="flex-1 h-px bg-[#E5E7EB]" />
+            </div>
+            <div className="card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr>{['Time', 'Patient', 'Type', 'Doctor', 'Duration', 'Status'].map(h => <th key={h} className="table-header">{h}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {historyAppts.map(appt => {
+                      const { label, cls } = historyStatus(appt);
+                      return (
+                        <tr key={appt.id} className="table-row" onClick={() => { setSelected(appt); setModal(appt.status === 'cancelled' ? 'cancel-details' : 'details'); }}>
+                          <td className="table-cell text-xs text-[#6B7280]">{format(new Date(appt.appointment_time), 'MMM d, h:mm a')}</td>
+                          <td className="table-cell">
+                            <p className="font-medium text-[#111827]">{appt.patient_name}</p>
+                            <p className="text-xs text-[#9CA3AF]">{appt.age} / {appt.gender}</p>
+                          </td>
+                          <td className="table-cell"><span className="text-xs bg-[#F3F4F6] text-[#374151] px-2 py-0.5 rounded-full font-medium">{appt.type}</span></td>
+                          <td className="table-cell text-[#374151]">{appt.doctor_name}</td>
+                          <td className="table-cell text-[#374151]">{appt.duration} min</td>
+                          <td className="table-cell"><span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${cls}`}>{label}</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
 
       <Modal open={modal === 'add'} onClose={() => setModal(null)} title="Add Appointment" size="lg">

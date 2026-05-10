@@ -292,6 +292,46 @@ const createTables = async () => {
   console.log('Patient code migration complete');
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // Add original_status to doctors — stores pre-OD status for restore after event
+  await pool.query(`
+    ALTER TABLE doctors ADD COLUMN IF NOT EXISTS original_status VARCHAR(50) DEFAULT NULL
+  `);
+
+  // Unique constraint on event_assignments — prevent duplicate assignments
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_event_assignment
+    ON event_assignments (event_id, user_id)
+  `);
+
+  // ─── DOCTOR POINTS TABLE ─────────────────────────────────────────────────
+  // Stores the current accumulated points per doctor.
+  // One row per doctor. Upserted whenever points change.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS doctor_points (
+      id SERIAL PRIMARY KEY,
+      doctor_id INTEGER UNIQUE REFERENCES doctors(id) ON DELETE CASCADE,
+      appointment_points INTEGER DEFAULT 0,
+      event_points       INTEGER DEFAULT 0,
+      feedback_points    INTEGER DEFAULT 0,
+      penalty_points     INTEGER DEFAULT 0,
+      total_points       INTEGER DEFAULT 0,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  // ─── PERFORMANCE HISTORY TABLE ───────────────────────────────────────────
+  // One row per doctor per day — used for the performance growth line chart.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS performance_history (
+      id SERIAL PRIMARY KEY,
+      doctor_id   INTEGER REFERENCES doctors(id) ON DELETE CASCADE,
+      total_points INTEGER DEFAULT 0,
+      recorded_on  DATE DEFAULT CURRENT_DATE,
+      UNIQUE (doctor_id, recorded_on)
+    )
+  `);
+  // ─────────────────────────────────────────────────────────────────────────
+
   console.log('All tables created successfully');
 };
 

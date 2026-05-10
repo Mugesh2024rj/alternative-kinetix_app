@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { BarChart2, TrendingUp, Users, ClipboardList, ArrowLeftRight, UserCheck } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
 import Layout from '../../components/layout/Layout';
 import MetricCard from '../../components/ui/MetricCard';
 import { Spinner } from '../../components/ui';
@@ -23,19 +26,37 @@ const Analytics = () => {
   const [trends, setTrends] = useState([]);
   const [assessmentPie, setAssessmentPie] = useState([]);
   const [doctorWorkload, setDoctorWorkload] = useState([]);
+  const [eventsCompleted, setEventsCompleted] = useState([]);
+  const [completedTrend, setCompletedTrend] = useState([]);
+  const [doctorParticipation, setDoctorParticipation] = useState([]);
+  const [performanceGrowth, setPerformanceGrowth] = useState({ data: [], doctors: [] });
+  const [eventPie, setEventPie] = useState([]);
   const [period, setPeriod] = useState('monthly');
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [m, t, ap, dw] = await Promise.all([
-        api.get('/analytics/metrics', { params: { period } }),
-        api.get('/analytics/appointment-trends', { params: { period } }),
+      const [m, t, ap, dw, ec, ct, dp, pg, ep] = await Promise.all([
+        api.get('/analytics/metrics',                     { params: { period } }),
+        api.get('/analytics/appointment-trends',          { params: { period } }),
         api.get('/analytics/assessment-status'),
         api.get('/analytics/doctor-workload'),
+        api.get('/analytics/events-completed',            { params: { period } }),
+        api.get('/analytics/completed-appointments-trend',{ params: { period } }),
+        api.get('/analytics/doctor-participation'),
+        api.get('/analytics/performance-growth',          { params: { period } }),
+        api.get('/analytics/event-participation-pie'),
       ]);
-      setMetrics(m.data); setTrends(t.data); setAssessmentPie(ap.data); setDoctorWorkload(dw.data);
+      setMetrics(m.data);
+      setTrends(t.data);
+      setAssessmentPie(ap.data);
+      setDoctorWorkload(dw.data);
+      setEventsCompleted(ec.data);
+      setCompletedTrend(ct.data);
+      setDoctorParticipation(dp.data);
+      setPerformanceGrowth(pg.data);
+      setEventPie(ep.data);
     } catch {}
     setLoading(false);
   };
@@ -64,6 +85,7 @@ const Analytics = () => {
           <MetricCard title="Staff Utilization" value={`${metrics?.staff_utilization || 0}%`} icon={UserCheck} color="purple" />
         </div>
 
+        {/* Existing: Appointment Trends */}
         <div className="card p-5">
           <h3 className="font-semibold text-[#111827] mb-4">Appointment Trends</h3>
           <ResponsiveContainer width="100%" height={280}>
@@ -72,12 +94,31 @@ const Analytics = () => {
               <XAxis dataKey="label" tick={{ fill: '#6B7280', fontSize: 11 }} />
               <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} />
               <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="value" stroke="#1F4D3E" strokeWidth={2.5} dot={{ fill: '#1F4D3E', r: 3 }} name="Appointments" />
+              <Legend wrapperStyle={{ color: '#6B7280', fontSize: 12 }} />
+              <Line type="monotone" dataKey="value" stroke="#1F4D3E" strokeWidth={2.5} dot={{ fill: '#1F4D3E', r: 3 }} name="Total" />
+              <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} dot={false} name="Completed" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* NEW: Completed Appointments line chart */}
+        <div className="card p-5">
+          <h3 className="font-semibold text-[#111827] mb-4">Completed Appointments Over Time</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={completedTrend}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis dataKey="label" tick={{ fill: '#6B7280', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} allowDecimals={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend wrapperStyle={{ color: '#6B7280', fontSize: 12 }} />
+              <Line type="monotone" dataKey="total" stroke="#1F4D3E" strokeWidth={2} dot={false} name="Total" />
+              <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2.5} dot={{ fill: '#10b981', r: 3 }} name="Completed" />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Existing: Assessment Status Pie */}
           <div className="card p-5">
             <h3 className="font-semibold text-[#111827] mb-4">Assessment Status Distribution</h3>
             {assessmentPie.length === 0 ? (
@@ -85,7 +126,8 @@ const Analytics = () => {
             ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <PieChart>
-                  <Pie data={assessmentPie} dataKey="value" nameKey="status" cx="50%" cy="50%" outerRadius={90} label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                  <Pie data={assessmentPie} dataKey="value" nameKey="status" cx="50%" cy="50%" outerRadius={90}
+                    label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
                     {assessmentPie.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 12 }} />
@@ -95,6 +137,7 @@ const Analytics = () => {
             )}
           </div>
 
+          {/* Existing: Doctor Workload */}
           <div className="card p-5">
             <h3 className="font-semibold text-[#111827] mb-4">Doctor Workload</h3>
             <ResponsiveContainer width="100%" height={240}>
@@ -108,6 +151,86 @@ const Analytics = () => {
                 <Bar dataKey="appointments" fill="#10b981" radius={[4, 4, 0, 0]} name="Today's Appts" />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Existing: Events Completed bar chart */}
+        <div className="card p-5">
+          <h3 className="font-semibold text-[#111827] mb-4">Events Completed by Doctor</h3>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={eventsCompleted}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis dataKey="doctor" tick={{ fill: '#6B7280', fontSize: 10 }} tickFormatter={v => v.split(' ').pop()} />
+              <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} allowDecimals={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="events_completed" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Events Completed" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* NEW: Doctor Participation horizontal bar chart */}
+        <div className="card p-5">
+          <h3 className="font-semibold text-[#111827] mb-4">Doctor Participation (Appointments + Events)</h3>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={doctorParticipation} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+              <XAxis type="number" tick={{ fill: '#6B7280', fontSize: 11 }} allowDecimals={false} />
+              <YAxis dataKey="doctor" type="category" tick={{ fill: '#6B7280', fontSize: 10 }} width={80}
+                tickFormatter={v => v.split(' ').pop()} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend wrapperStyle={{ color: '#6B7280', fontSize: 12 }} />
+              <Bar dataKey="total_appointments" fill="#1F4D3E" radius={[0, 4, 4, 0]} name="Appointments" />
+              <Bar dataKey="total_events" fill="#8b5cf6" radius={[0, 4, 4, 0]} name="Events" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* NEW: Doctor Performance Growth line chart */}
+          <div className="card p-5">
+            <h3 className="font-semibold text-[#111827] mb-4">Doctor Performance Growth</h3>
+            {performanceGrowth.data && performanceGrowth.data.length === 0 ? (
+              <div className="flex items-center justify-center h-48 text-[#9CA3AF] text-sm">No history yet — points update as appointments/events complete</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={240}>
+                <LineChart data={performanceGrowth.data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                  <XAxis dataKey="label" tick={{ fill: '#6B7280', fontSize: 10 }} />
+                  <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend wrapperStyle={{ color: '#6B7280', fontSize: 12 }} />
+                  {(performanceGrowth.doctors || []).map((doc, i) => (
+                    <Line key={doc} type="monotone" dataKey={doc} stroke={COLORS[i % COLORS.length]}
+                      strokeWidth={2} dot={false} name={doc.split(' ').pop()} />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* NEW: Event Participation Pie chart */}
+          <div className="card p-5">
+            <h3 className="font-semibold text-[#111827] mb-4">Event Participation Count</h3>
+            {eventPie.filter(e => parseInt(e.value) > 0).length === 0 ? (
+              <div className="flex items-center justify-center h-48 text-[#9CA3AF] text-sm">No event assignments yet</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={240}>
+                <PieChart>
+                  <Pie
+                    data={eventPie.filter(e => parseInt(e.value) > 0)}
+                    dataKey="value" nameKey="doctor"
+                    cx="50%" cy="50%" outerRadius={90}
+                    label={({ doctor, percent }) => `${doctor.split(' ').pop()} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}>
+                    {eventPie.filter(e => parseInt(e.value) > 0).map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, fontSize: 12 }} />
+                  <Legend wrapperStyle={{ color: '#6B7280', fontSize: 12 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
