@@ -174,23 +174,82 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 card p-5">
-            <h2 className="text-base font-semibold text-[#111827] mb-4">Today's Schedule</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-[#111827]">Today's Schedule</h2>
+              <span className="text-xs text-[#6B7280] bg-[#F3F4F6] px-2 py-1 rounded-full">
+                Clinic: 8:00 AM – 6:00 PM
+              </span>
+            </div>
             {schedule.length === 0 ? (
               <p className="text-[#9CA3AF] text-sm text-center py-8">No appointments scheduled today</p>
             ) : (
-              <div className="space-y-2">
-                {schedule.map(appt => (
-                  <div key={appt.id} className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                    <div className="flex items-center gap-3">
-                      <div className="text-xs text-[#6B7280] w-16 shrink-0">{format(new Date(appt.appointment_time), 'h:mm a')}</div>
-                      <div>
-                        <p className="text-sm font-medium text-[#111827]">{appt.patient_name}</p>
-                        <p className="text-xs text-[#6B7280]">{appt.doctor_name} · {appt.type}</p>
+              <div className="relative">
+                {/* Vertical timeline line */}
+                <div className="absolute left-[60px] top-0 bottom-0 w-px bg-[#E5E7EB]" />
+                <div className="space-y-0">
+                  {schedule.map((appt, i) => {
+                    const time = new Date(appt.appointment_time);
+                    const isNow = (() => {
+                      const now = new Date();
+                      const end = new Date(time.getTime() + (appt.duration || 30) * 60000);
+                      return now >= time && now <= end;
+                    })();
+                    const isPast = new Date() > new Date(time.getTime() + (appt.duration || 30) * 60000);
+                    const dotColor = appt.status === 'done' ? 'bg-emerald-500'
+                      : appt.status === 'in-progress' || isNow ? 'bg-[#1F4D3E]'
+                      : appt.status === 'cancelled' ? 'bg-red-400'
+                      : isPast ? 'bg-[#D1D5DB]'
+                      : 'bg-[#F59E0B]';
+                    return (
+                      <div key={appt.id} className="flex items-start gap-0 relative">
+                        {/* Time label */}
+                        <div className="w-[52px] shrink-0 text-right pr-2 pt-3">
+                          <span className={`text-[11px] font-medium ${
+                            isNow ? 'text-[#1F4D3E]' : isPast ? 'text-[#9CA3AF]' : 'text-[#6B7280]'
+                          }`}>
+                            {format(time, 'h:mm a')}
+                          </span>
+                        </div>
+                        {/* Dot on the line */}
+                        <div className="relative flex flex-col items-center" style={{ width: 16, marginLeft: 0 }}>
+                          <div className={`w-3 h-3 rounded-full border-2 border-white shadow mt-3.5 z-10 shrink-0 ${
+                            isNow ? 'ring-2 ring-[#1F4D3E] ring-offset-1' : ''
+                          } ${dotColor}`} />
+                          {i < schedule.length - 1 && (
+                            <div className="w-px flex-1 bg-[#E5E7EB] min-h-[8px]" />
+                          )}
+                        </div>
+                        {/* Appointment card */}
+                        <div className={`flex-1 ml-3 mb-2 p-3 rounded-lg border transition-all ${
+                          isNow
+                            ? 'bg-[#E8F0EF] border-[#1F4D3E]/30 shadow-sm'
+                            : isPast
+                            ? 'bg-[#F9FAFB] border-[#E5E7EB] opacity-60'
+                            : 'bg-[#F9FAFB] border-[#E5E7EB]'
+                        }`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-semibold text-[#111827] truncate">{appt.patient_name}</p>
+                                {isNow && (
+                                  <span className="text-[10px] bg-[#1F4D3E] text-white px-1.5 py-0.5 rounded-full font-medium shrink-0">Now</span>
+                                )}
+                              </div>
+                              <p className="text-xs text-[#6B7280] mt-0.5">
+                                {appt.doctor_name}
+                                <span className="mx-1">·</span>
+                                {appt.type}
+                                <span className="mx-1">·</span>
+                                {appt.duration || 30} min
+                              </p>
+                            </div>
+                            <StatusBadge status={appt.status} />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <StatusBadge status={appt.status} />
-                  </div>
-                ))}
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
