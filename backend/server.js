@@ -46,6 +46,19 @@ const start = async () => {
   try {
     await createTables();
     await seedData();
+
+    // Seed doctor_points for any existing data on first run
+    const { recalculateDoctorPoints } = require('./services/performanceService');
+    const doctors = await require('./config/db').query('SELECT id FROM doctors');
+    for (const doc of doctors.rows) {
+      await recalculateDoctorPoints(doc.id);
+    }
+
+    // Auto-complete any events that expired before server started
+    // and start the repeating 5-minute scheduler
+    const { startEventScheduler } = require('./services/eventScheduler');
+    startEventScheduler();
+
     server.listen(PORT, () => console.log(`KINETIX server running on port ${PORT}`));
   } catch (err) {
     console.error('Startup error:', err);

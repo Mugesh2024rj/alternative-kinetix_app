@@ -25,11 +25,11 @@ const recalculateDoctorPoints = async (doctorId, client) => {
   const appointmentPoints = parseInt(apptRes.rows[0].count) * 10;
 
   // 2. Completed event participations -> +15 each
-  // Join via doctors.user_id -> event_assignments.user_id
+  // Join via event_assignments.doctor_id (direct doctor link)
   const eventRes = await db.query(
     `SELECT COUNT(*) FROM event_assignments ea
      JOIN events ev ON ev.id = ea.event_id AND ev.status = 'completed'
-     WHERE ea.user_id = (SELECT user_id FROM doctors WHERE id = $1 AND user_id IS NOT NULL LIMIT 1)`,
+     WHERE ea.doctor_id = $1`,
     [doctorId]
   );
   const eventPoints = parseInt(eventRes.rows[0].count) * 15;

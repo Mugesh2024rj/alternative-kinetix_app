@@ -40,19 +40,9 @@ const Performance = () => {
       setMetrics(m.data);
       setTypeBreakdown(tb.data);
       setSatisfaction(sat.data);
+      setDoctorIndex(di.data);
       setTrends(tr.data);
       setCompletedAppts(ca.data);
-
-      const index = di.data;
-      // If all doctors have 0 total_points, auto-seed from existing DB data
-      const allZero = index.every(d => parseInt(d.total_points) === 0);
-      if (allZero && index.length > 0) {
-        await api.post('/performance/recalculate-all');
-        const fresh = await api.get('/performance/doctor-index');
-        setDoctorIndex(fresh.data);
-      } else {
-        setDoctorIndex(index);
-      }
     } catch {}
     setLoading(false);
   };
@@ -185,7 +175,7 @@ const Performance = () => {
                       <td className="table-cell font-medium text-[#111827]">{doc.full_name}</td>
                       <td className="table-cell text-[#374151]">{doc.specialisation}</td>
                       <td className="table-cell text-[#374151]">{doc.sessions_completed}</td>
-                      <td className="table-cell text-[#374151]">{doc.sessions_completed}</td>
+                      <td className="table-cell text-[#374151]">{parseInt(doc.appointment_points || 0) / 10}</td>
                       <td className="table-cell text-[#374151]">{doc.events_participated || 0}</td>
                       <td className="table-cell text-emerald-600">+{doc.appointment_points || 0}</td>
                       <td className="table-cell text-blue-600">+{doc.event_points || 0}</td>

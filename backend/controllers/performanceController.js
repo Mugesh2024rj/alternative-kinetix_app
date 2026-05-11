@@ -43,31 +43,45 @@ const getPatientSatisfaction = async (req, res) => {
 
 const getDoctorPerformanceIndex = async (req, res) => {
   try {
+    const { recalculateDoctorPoints } = require('../services/performanceService');
+
+    // Recalculate all doctors' points from live DB data first
+    const allDoctors = await pool.query('SELECT id FROM doctors');
+    for (const doc of allDoctors.rows) {
+      await recalculateDoctorPoints(doc.id);
+    }
+
+    // Read fresh data — use DISTINCT counts to prevent row inflation from multiple JOINs
     const result = await pool.query(`
       SELECT
         d.id,
         d.full_name,
         d.specialisation,
-        COUNT(CASE WHEN a.status = 'done' THEN 1 END)                                    AS sessions_completed,
-        COALESCE(AVG(f.rating), 0)                                                        AS feedback_score,
-        ROUND(COUNT(CASE WHEN a.status = 'done' THEN 1 END)::numeric
-              / NULLIF(COUNT(a.id), 0) * 100, 1)                                          AS on_time_percentage,
-        COUNT(CASE WHEN h.status = 'pending' THEN 1 END)                                  AS handover_penalty,
-        COUNT(DISTINCT CASE WHEN ev.status = 'completed' THEN ea.event_id END)            AS events_participated,
-        COALESCE(dp.appointment_points, 0)                                                AS appointment_points,
-        COALESCE(dp.event_points, 0)                                                      AS event_points,
-        COALESCE(dp.feedback_points, 0)                                                   AS feedback_points,
-        COALESCE(dp.penalty_points, 0)                                                    AS penalty_points,
-        COALESCE(dp.total_points, 0)                                                      AS total_points
+        (
+          SELECT COUNT(*) FROM appointments
+          WHERE doctor_id = d.id AND status = 'done'
+        )                                                   AS sessions_completed,
+        (
+          SELECT COALESCE(AVG(rating), 0) FROM feedback
+          WHERE doctor_id = d.id
+        )                                                   AS feedback_score,
+        (
+          SELECT COUNT(*) FROM handovers
+          WHERE from_doctor_id = d.id AND status = 'pending'
+        )                                                   AS handover_penalty,
+        (
+          SELECT COUNT(DISTINCT ea.event_id)
+          FROM event_assignments ea
+          JOIN events ev ON ev.id = ea.event_id AND ev.status = 'completed'
+          WHERE ea.user_id = d.user_id
+        )                                                   AS events_participated,
+        COALESCE(dp.appointment_points, 0)                 AS appointment_points,
+        COALESCE(dp.event_points, 0)                       AS event_points,
+        COALESCE(dp.feedback_points, 0)                    AS feedback_points,
+        COALESCE(dp.penalty_points, 0)                     AS penalty_points,
+        COALESCE(dp.total_points, 0)                       AS total_points
       FROM doctors d
-      LEFT JOIN appointments a      ON a.doctor_id = d.id
-      LEFT JOIN feedback f          ON f.doctor_id = d.id
-      LEFT JOIN handovers h         ON h.from_doctor_id = d.id AND h.status = 'pending'
-      LEFT JOIN event_assignments ea ON ea.user_id = d.user_id
-      LEFT JOIN events ev           ON ev.id = ea.event_id
-      LEFT JOIN doctor_points dp    ON dp.doctor_id = d.id
-      GROUP BY d.id, d.full_name, d.specialisation, dp.appointment_points,
-               dp.event_points, dp.feedback_points, dp.penalty_points, dp.total_points
+      LEFT JOIN doctor_points dp ON dp.doctor_id = d.id
       ORDER BY COALESCE(dp.total_points, 0) DESC
     `);
     res.json(result.rows);

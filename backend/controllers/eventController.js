@@ -1,10 +1,49 @@
 const pool = require('../config/db');
 const { recalculateDoctorPoints } = require('../services/performanceService');
 
+// ─────────────────────────────────────────────
+// HELPER: Auto-complete events whose end_date
+// (or event_date when no end_date) has passed.
+// Runs before any GET so status is always fresh.
+// Skips cancelled events.
+// ─────────────────────────────────────────────
+const autoCompleteExpiredEvents = async () => {
+  // Find upcoming/ongoing events whose time has passed
+  const expired = await pool.query(`
+    UPDATE events
+    SET status = 'completed', updated_at = NOW()
+    WHERE status IN ('upcoming', 'ongoing')
+      AND (
+        (end_date IS NOT NULL AND end_date < NOW())
+        OR
+        (end_date IS NULL AND event_date IS NOT NULL AND event_date < NOW())
+      )
+    RETURNING id
+  `);
+
+  // For each newly completed event, recalculate points for assigned doctors
+  for (const row of expired.rows) {
+    const assignments = await pool.query(
+      `SELECT doctor_id FROM event_assignments
+       WHERE event_id = $1 AND doctor_id IS NOT NULL`,
+      [row.id]
+    );
+    for (const a of assignments.rows) {
+      await recalculateDoctorPoints(a.doctor_id);
+    }
+  }
+
+  if (expired.rows.length > 0) {
+    console.log(`Auto-completed ${expired.rows.length} expired event(s)`);
+  }
+};
+
 // GET /api/events
 // ─────────────────────────────────────────────
 const getEvents = async (req, res) => {
   try {
+    // Always sync expired events to 'completed' before returning
+    await autoCompleteExpiredEvents();
     const result = await pool.query(`
       SELECT e.*, u.full_name as created_by_name, u.role as created_by_role,
         COUNT(ea.id) as participant_count
@@ -28,6 +67,7 @@ const getEvents = async (req, res) => {
 // ─────────────────────────────────────────────
 const getEventById = async (req, res) => {
   try {
+    await autoCompleteExpiredEvents();
     const event = await pool.query(`
       SELECT e.*, u.full_name as created_by_name, u.role as created_by_role
       FROM events e
@@ -37,19 +77,20 @@ const getEventById = async (req, res) => {
 
     if (!event.rows[0]) return res.status(404).json({ error: 'Event not found' });
 
-    // Fetch assignments — join doctors table to get specialisation, email, status
+    // Fetch assignments — join doctors directly via doctor_id column
     const assignments = await pool.query(`
       SELECT
-        ea.id, ea.event_id, ea.user_id, ea.role AS event_role, ea.assigned_at,
-        u.full_name, u.role AS role_in_system,
-        d.id         AS doctor_id,
+        ea.id, ea.event_id, ea.user_id, ea.doctor_id, ea.role AS event_role, ea.assigned_at,
+        COALESCE(d.full_name, u.full_name)   AS full_name,
+        COALESCE(u.role, 'doctor')           AS role_in_system,
+        d.id                                 AS doctor_id,
         d.specialisation,
-        d.email      AS doctor_email,
-        d.status     AS doctor_status,
-        d.phone      AS doctor_phone
+        d.email                              AS doctor_email,
+        d.status                             AS doctor_status,
+        d.phone                              AS doctor_phone
       FROM event_assignments ea
-      JOIN users u ON ea.user_id = u.id
-      LEFT JOIN doctors d ON d.user_id = u.id
+      LEFT JOIN users u    ON ea.user_id = u.id
+      LEFT JOIN doctors d  ON ea.doctor_id = d.id
       WHERE ea.event_id = $1
       ORDER BY ea.assigned_at ASC
     `, [req.params.id]);
@@ -65,13 +106,36 @@ const getEventById = async (req, res) => {
 // POST /api/events
 // ─────────────────────────────────────────────
 const createEvent = async (req, res) => {
-  const { title, description, event_date, end_date, location, type, max_participants } = req.body;
+  const { title, description, event_date, end_date, location, type, max_participants, assigned_doctors } = req.body;
+  // assigned_doctors = array of doctor IDs (doctors.id, NOT user_id)
   try {
     const result = await pool.query(
       'INSERT INTO events (title, description, event_date, end_date, location, type, max_participants, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
       [title, description, event_date, end_date, location, type, max_participants, req.user.id]
     );
-    res.status(201).json(result.rows[0]);
+    const newEvent = result.rows[0];
+
+    if (Array.isArray(assigned_doctors) && assigned_doctors.length > 0) {
+      for (const doctorId of assigned_doctors) {
+        const docRow = await pool.query('SELECT user_id FROM doctors WHERE id = $1', [doctorId]);
+        const userId = docRow.rows[0]?.user_id || null;
+
+        await pool.query(
+          `INSERT INTO event_assignments (event_id, user_id, doctor_id, role)
+           VALUES ($1, $2, $3, 'doctor')`,
+          [newEvent.id, userId, doctorId]
+        );
+
+        await pool.query(
+          `UPDATE doctors
+           SET original_status = COALESCE(original_status, status), updated_at = NOW()
+           WHERE id = $1 AND original_status IS NULL`,
+          [doctorId]
+        );
+      }
+    }
+
+    res.status(201).json(newEvent);
   } catch (err) {
     console.error('createEvent error:', err.message);
     res.status(500).json({ error: err.message });
@@ -90,9 +154,8 @@ const updateEvent = async (req, res) => {
     // When event is marked completed, recalculate points for all assigned doctors
     if (status === 'completed' && updatedEvent) {
       const assignments = await pool.query(
-        `SELECT d.id as doctor_id FROM event_assignments ea
-         JOIN doctors d ON d.user_id = ea.user_id
-         WHERE ea.event_id = $1`,
+        `SELECT doctor_id FROM event_assignments
+         WHERE event_id = $1 AND doctor_id IS NOT NULL`,
         [updatedEvent.id]
       );
       for (const row of assignments.rows) {
@@ -122,14 +185,25 @@ const cancelEvent = async (req, res) => {
     );
     if (!result.rows[0]) return res.status(404).json({ error: 'Event not found' });
 
-    // Step 2: Restore original_status for all doctors assigned to this event
-    // Only restore if their original_status was saved (not null)
+    // Restore original_status for all doctors assigned to this event
+    await pool.query(`
+      UPDATE doctors
+      SET status = original_status, original_status = NULL, updated_at = NOW()
+      WHERE original_status IS NOT NULL
+        AND id IN (
+          SELECT doctor_id FROM event_assignments
+          WHERE event_id = $1 AND doctor_id IS NOT NULL
+        )
+    `, [eventId]);
+
+    // Also restore by user_id for any legacy assignments
     await pool.query(`
       UPDATE doctors
       SET status = original_status, original_status = NULL, updated_at = NOW()
       WHERE original_status IS NOT NULL
         AND user_id IN (
-          SELECT user_id FROM event_assignments WHERE event_id = $1
+          SELECT user_id FROM event_assignments
+          WHERE event_id = $1 AND user_id IS NOT NULL AND doctor_id IS NULL
         )
     `, [eventId]);
 
@@ -148,29 +222,42 @@ const cancelEvent = async (req, res) => {
 // only on the event date — not permanently.
 // OD is computed dynamically in getDoctors via today_event.
 // ─────────────────────────────────────────────
+// DELETE /api/events/:id
+const deleteEvent = async (req, res) => {
+  try {
+    await pool.query('DELETE FROM events WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Event deleted' });
+  } catch (err) {
+    console.error('deleteEvent error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 const assignToEvent = async (req, res) => {
-  const { user_id, role } = req.body;
+  const { user_id, role, doctor_id } = req.body;
   const eventId = req.params.id;
   try {
-    // Insert assignment — unique index prevents duplicates silently
     const result = await pool.query(
-      `INSERT INTO event_assignments (event_id, user_id, role)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (event_id, user_id) DO NOTHING
+      `INSERT INTO event_assignments (event_id, user_id, doctor_id, role)
+       VALUES ($1, $2, $3, $4)
        RETURNING *`,
-      [eventId, user_id, role]
+      [eventId, user_id || null, doctor_id || null, role || 'doctor']
     );
 
-    // If the assigned user is a doctor, save their original_status
-    // so we can restore it when the event is cancelled or ends
-    if (role === 'doctor') {
-      await pool.query(`
-        UPDATE doctors
-        SET original_status = COALESCE(original_status, status),
-            updated_at = NOW()
-        WHERE user_id = $1
-          AND original_status IS NULL
-      `, [user_id]);
+    if (doctor_id) {
+      await pool.query(
+        `UPDATE doctors
+         SET original_status = COALESCE(original_status, status), updated_at = NOW()
+         WHERE id = $1 AND original_status IS NULL`,
+        [doctor_id]
+      );
+    } else if (role === 'doctor' && user_id) {
+      await pool.query(
+        `UPDATE doctors
+         SET original_status = COALESCE(original_status, status), updated_at = NOW()
+         WHERE user_id = $1 AND original_status IS NULL`,
+        [user_id]
+      );
     }
 
     res.status(201).json(result.rows[0] || { message: 'Already assigned' });
@@ -180,4 +267,4 @@ const assignToEvent = async (req, res) => {
   }
 };
 
-module.exports = { getEvents, getEventById, createEvent, updateEvent, cancelEvent, assignToEvent };
+module.exports = { getEvents, getEventById, createEvent, updateEvent, cancelEvent, assignToEvent, deleteEvent };

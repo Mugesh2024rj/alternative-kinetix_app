@@ -333,6 +333,49 @@ const createTables = async () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   console.log('All tables created successfully');
+
+  // ─── doctor_points table ───────────────────────────────────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS doctor_points (
+      doctor_id         INTEGER PRIMARY KEY REFERENCES doctors(id) ON DELETE CASCADE,
+      appointment_points INTEGER DEFAULT 0,
+      event_points       INTEGER DEFAULT 0,
+      feedback_points    INTEGER DEFAULT 0,
+      penalty_points     INTEGER DEFAULT 0,
+      total_points       INTEGER DEFAULT 0,
+      updated_at         TIMESTAMP DEFAULT NOW()
+    )
+  `);
+
+  // ─── performance_history table ────────────────────────────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS performance_history (
+      id          SERIAL PRIMARY KEY,
+      doctor_id   INTEGER REFERENCES doctors(id) ON DELETE CASCADE,
+      total_points INTEGER DEFAULT 0,
+      recorded_on  DATE DEFAULT CURRENT_DATE,
+      UNIQUE (doctor_id, recorded_on)
+    )
+  `);
+
+  // Add doctor_id to event_assignments for direct doctor linking
+  // (doctors may not have a linked user account)
+  await pool.query(`
+    ALTER TABLE event_assignments ADD COLUMN IF NOT EXISTS doctor_id INTEGER REFERENCES doctors(id) ON DELETE SET NULL
+  `);
+
+  // Drop old unique index on (event_id, user_id) — user_id is NULL for most doctors
+  // which caused silent insert failures
+  await pool.query(`DROP INDEX IF EXISTS idx_unique_event_assignment`);
+
+  // Create correct unique index on (event_id, doctor_id)
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_event_doctor
+    ON event_assignments (event_id, doctor_id)
+    WHERE doctor_id IS NOT NULL
+  `);
+
+  console.log('doctor_points and performance_history tables ready');
 };
 
 const seedData = async () => {

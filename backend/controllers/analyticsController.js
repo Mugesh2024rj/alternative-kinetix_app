@@ -61,10 +61,12 @@ const getAssessmentStatusPie = async (req, res) => {
 const getDoctorWorkload = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT d.full_name as name, d.patient_count as patients,
-        COUNT(a.id) as appointments
+      SELECT
+        d.full_name as name,
+        d.patient_count as patients,
+        COUNT(DISTINCT a.id) as appointments
       FROM doctors d
-      LEFT JOIN appointments a ON a.doctor_id = d.id AND DATE(a.appointment_time) = CURRENT_DATE
+      LEFT JOIN appointments a ON a.doctor_id = d.id
       GROUP BY d.id, d.full_name, d.patient_count
       ORDER BY patients DESC
     `);
@@ -86,8 +88,10 @@ const getEventsCompleted = async (req, res) => {
       SELECT d.full_name as doctor,
         COUNT(DISTINCT ea.event_id) as events_completed
       FROM doctors d
-      LEFT JOIN event_assignments ea ON ea.user_id = d.user_id
-      LEFT JOIN events ev ON ev.id = ea.event_id AND ev.status = 'completed' AND ${dateFilter}
+      LEFT JOIN event_assignments ea ON ea.doctor_id = d.id
+      LEFT JOIN events ev ON ev.id = ea.event_id
+        AND ev.status = 'completed'
+        AND ${dateFilter}
       GROUP BY d.id, d.full_name
       ORDER BY events_completed DESC
     `);
@@ -136,7 +140,7 @@ const getDoctorParticipation = async (req, res) => {
         COUNT(DISTINCT CASE WHEN ev.status = 'completed' THEN ea.event_id END) as total_events
       FROM doctors d
       LEFT JOIN appointments a       ON a.doctor_id = d.id
-      LEFT JOIN event_assignments ea ON ea.user_id = d.user_id
+      LEFT JOIN event_assignments ea ON ea.doctor_id = d.id
       LEFT JOIN events ev            ON ev.id = ea.event_id
       GROUP BY d.id, d.full_name
       ORDER BY (COUNT(DISTINCT a.id) + COUNT(DISTINCT ea.event_id)) DESC
@@ -186,7 +190,7 @@ const getEventParticipationPie = async (req, res) => {
     const result = await pool.query(`
       SELECT d.full_name as doctor, COUNT(ea.id) as value
       FROM doctors d
-      LEFT JOIN event_assignments ea ON ea.user_id = d.user_id
+      LEFT JOIN event_assignments ea ON ea.doctor_id = d.id
       GROUP BY d.id, d.full_name
       ORDER BY value DESC
     `);

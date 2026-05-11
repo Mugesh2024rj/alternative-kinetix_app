@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CalendarDays, Plus, Users, MapPin, Eye, XCircle } from 'lucide-react';
+import { CalendarDays, Plus, Users, MapPin, Eye, XCircle, Trash2 } from 'lucide-react';
 import Layout from '../../components/layout/Layout';
 import Modal from '../../components/ui/Modal';
 import { StatusBadge, Spinner, EmptyState } from '../../components/ui';
@@ -49,17 +49,16 @@ const EventForm = ({ onSave, onClose }) => {
       return;
     }
     try {
-      const res = await api.post('/events', form);
-      const eventId = res.data.id;
-      for (const doctorId of selectedDoctors) {
-        const doc = doctors.find(d => d.id === doctorId);
-        if (doc?.user_id) {
-          await api.post(`/events/${eventId}/assign`, { user_id: doc.user_id, role: 'doctor' }).catch(() => {});
-        }
-      }
-      toast.success('Event created');
+      // Send doctor IDs (doctors.id) directly — backend handles user_id lookup
+      const res = await api.post('/events', {
+        ...form,
+        assigned_doctors: selectedDoctors,
+      });
+      toast.success(selectedDoctors.length > 0 ? 'Event created with assigned doctors' : 'Event created successfully');
       onSave();
-    } catch (err) { toast.error(err.response?.data?.error || 'Error creating event'); }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error creating event');
+    }
   };
 
   return (
@@ -154,27 +153,29 @@ const EventForm = ({ onSave, onClose }) => {
 // ─────────────────────────────────────────────
 const EventDetailModal = ({ eventId, onClose, onCancelled }) => {
   const [event, setEvent] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [assignUserId, setAssignUserId] = useState('');
-  const [assignRole, setAssignRole] = useState('');
   const [postReport, setPostReport] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const reload = () => api.get(`/events/${eventId}`).then(r => { setEvent(r.data); setPostReport(r.data.post_event_report || ''); });
+  const reload = async () => {
+    setRefreshing(true);
+    try {
+      const r = await api.get(`/events/${eventId}`);
+      setEvent(r.data);
+      setPostReport(r.data.post_event_report || '');
+    } catch (err) {
+      console.error('Failed to reload event:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     reload();
-    api.get('/settings/users').then(r => setUsers(r.data)).catch(() => {});
+    // Auto-refresh after 500ms to ensure fresh data is loaded
+    const timer = setTimeout(() => reload(), 500);
+    return () => clearTimeout(timer);
   }, [eventId]);
-
-  const assign = async () => {
-    if (!assignUserId) return;
-    try {
-      await api.post(`/events/${eventId}/assign`, { user_id: assignUserId, role: assignRole });
-      toast.success('Staff assigned');
-      reload();
-    } catch { toast.error('Error assigning staff'); }
-  };
 
   const saveReport = async () => {
     try {
@@ -195,8 +196,8 @@ const EventDetailModal = ({ eventId, onClose, onCancelled }) => {
 
   if (!event) return <Spinner />;
 
-  const doctorAssignments = event.assignments?.filter(a => a.role_in_system === 'doctor' || a.event_role === 'doctor') || [];
-  const isCancelled = event.status === 'cancelled';
+  const doctorAssignments = event.assignments?.filter(a => a.doctor_id || a.event_role === 'doctor' || a.role_in_system === 'doctor') || [];
+  const canCancel = event.status === 'upcoming';
 
   return (
     <div className="space-y-5">
@@ -209,12 +210,12 @@ const EventDetailModal = ({ eventId, onClose, onCancelled }) => {
           ['Start Date',       event.event_date ? format(new Date(event.event_date), 'MMM d, yyyy h:mm a') : '-'],
           ['End Date',         event.end_date   ? format(new Date(event.end_date),   'MMM d, yyyy h:mm a') : '-'],
           ['Max Participants', event.max_participants],
-          ['Assigned',         event.assignments?.length || 0],
+          ['Assigned Doctors', event.assignments?.length ?? 0],
           ['Status',           event.status],
         ].map(([k, v]) => (
           <div key={k}>
             <span className="text-[#6B7280] text-xs">{k}</span>
-            <p className="text-[#111827] font-medium text-sm mt-0.5">{v || '-'}</p>
+            <p className="text-[#111827] font-medium text-sm mt-0.5">{v !== null && v !== undefined ? v : '-'}</p>
           </div>
         ))}
       </div>
@@ -240,27 +241,27 @@ const EventDetailModal = ({ eventId, onClose, onCancelled }) => {
 
       {/* Assigned Doctors — with specialisation, email, status */}
       <div>
-        <h4 className="text-sm font-semibold text-[#111827] mb-2">Assigned Doctors ({doctorAssignments.length})</h4>
+        <h4 className="text-sm font-semibold text-[#111827] mb-3">Assigned Doctors ({doctorAssignments.length})</h4>
         {doctorAssignments.length === 0 ? (
-          <p className="text-xs text-[#9CA3AF] mb-3">No doctors assigned to this event</p>
+          <div className="p-4 bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg">
+            <p className="text-sm text-[#9CA3AF]">No doctors assigned to this event</p>
+          </div>
         ) : (
-          <div className="space-y-2 mb-3">
+          <div className="grid grid-cols-1 gap-2">
             {doctorAssignments.map(a => (
-              <div key={a.id} className="p-3 bg-[#E8F0EF] border border-[#1F4D3E]/20 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-[#1F4D3E] flex items-center justify-center shrink-0">
-                      <span className="text-white text-[11px] font-bold">{a.full_name?.charAt(0)}</span>
+              <div key={a.id} className="p-4 bg-[#E8F0EF] border border-[#1F4D3E]/20 rounded-lg hover:border-[#1F4D3E]/40 transition-colors">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-[#1F4D3E] flex items-center justify-center shrink-0">
+                      <span className="text-white text-sm font-bold">{a.full_name?.charAt(0)}</span>
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[#1F4D3E]">{a.full_name}</p>
-                      {a.specialisation && <p className="text-xs text-[#6B7280]">{a.specialisation}</p>}
+                      {a.specialisation && <p className="text-xs text-[#6B7280] mt-0.5">{a.specialisation}</p>}
+                      {a.doctor_email && <p className="text-xs text-[#9CA3AF] mt-0.5">{a.doctor_email}</p>}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-xs bg-white text-[#6B7280] px-2 py-0.5 rounded-full border border-[#E5E7EB] capitalize">{a.doctor_status || a.role_in_system}</span>
-                    {a.doctor_email && <span className="text-[10px] text-[#9CA3AF]">{a.doctor_email}</span>}
-                  </div>
+                  <span className="text-xs font-medium bg-white text-[#6B7280] px-3 py-1 rounded-full border border-[#E5E7EB] capitalize whitespace-nowrap ml-2">{a.doctor_status || a.role_in_system}</span>
                 </div>
               </div>
             ))}
@@ -268,35 +269,8 @@ const EventDetailModal = ({ eventId, onClose, onCancelled }) => {
         )}
       </div>
 
-      {/* All Assignments */}
-      <div>
-        <h4 className="text-sm font-semibold text-[#111827] mb-2">All Assignments ({event.assignments?.length || 0})</h4>
-        <div className="space-y-1.5 mb-3 max-h-32 overflow-y-auto">
-          {event.assignments?.map(a => (
-            <div key={a.id} className="flex items-center justify-between text-xs p-2 bg-[#F9FAFB] border border-[#E5E7EB] rounded">
-              <span className="text-[#111827] font-medium">{a.full_name}</span>
-              <div className="flex items-center gap-2">
-                <span className="text-[#6B7280] capitalize">{a.event_role || a.role}</span>
-                <span className="text-[#9CA3AF] capitalize">{a.role_in_system}</span>
-              </div>
-            </div>
-          ))}
-          {!event.assignments?.length && <p className="text-[#9CA3AF] text-xs">No assignments yet</p>}
-        </div>
-        {!isCancelled && (
-          <div className="flex gap-2">
-            <select className="select flex-1 text-sm" value={assignUserId} onChange={e => setAssignUserId(e.target.value)}>
-              <option value="">Select Staff/Student</option>
-              {users.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.role})</option>)}
-            </select>
-            <input className="input w-32 text-sm" placeholder="Role" value={assignRole} onChange={e => setAssignRole(e.target.value)} />
-            <button onClick={assign} className="btn-primary text-sm">Assign</button>
-          </div>
-        )}
-      </div>
-
       {/* Post-Event Report */}
-      {!isCancelled && (
+      {canCancel && (
         <div>
           <h4 className="text-sm font-semibold text-[#111827] mb-2">Post-Event Report</h4>
           <textarea className="input" rows={4} value={postReport} onChange={e => setPostReport(e.target.value)} placeholder="Write post-event report..." />
@@ -304,8 +278,8 @@ const EventDetailModal = ({ eventId, onClose, onCancelled }) => {
         </div>
       )}
 
-      {/* Cancel Event — trigger button + inline confirmation */}
-      {!isCancelled && (
+      {/* Cancel Event — only for upcoming/ongoing events */}
+      {canCancel && (
         <div className="pt-4 border-t border-[#E5E7EB]">
           {!showCancelConfirm ? (
             <button
@@ -365,15 +339,37 @@ const EventDetailModal = ({ eventId, onClose, onCancelled }) => {
         </div>
       )}
 
-      {/* Already cancelled banner */}
-      {isCancelled && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl">
-          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-            <XCircle size={16} className="text-red-500" />
+      {/* Event status info — for completed or cancelled events */}
+      {!canCancel && (
+        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${
+          event.status === 'cancelled' 
+            ? 'bg-red-50 border-red-200' 
+            : 'bg-emerald-50 border-emerald-200'
+        }`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+            event.status === 'cancelled' 
+              ? 'bg-red-100' 
+              : 'bg-emerald-100'
+          }`}>
+            <XCircle size={16} className={event.status === 'cancelled' ? 'text-red-500' : 'text-emerald-600'} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-red-600">Event Cancelled</p>
-            <p className="text-xs text-red-400">This event has been cancelled and is preserved for records</p>
+            <p className={`text-sm font-semibold ${
+              event.status === 'cancelled' 
+                ? 'text-red-600' 
+                : 'text-emerald-700'
+            }`}>
+              {event.status === 'cancelled' ? 'Event Cancelled' : 'Event Completed'}
+            </p>
+            <p className={`text-xs ${
+              event.status === 'cancelled' 
+                ? 'text-red-400' 
+                : 'text-emerald-600'
+            }`}>
+              {event.status === 'cancelled' 
+                ? 'This event has been cancelled and is preserved for records' 
+                : 'This event has been completed and is preserved for records'}
+            </p>
           </div>
         </div>
       )}
@@ -397,6 +393,16 @@ const Events = () => {
       setEvents(res.data);
     } catch {}
     setLoading(false);
+  };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this event from history?')) return;
+    try {
+      await api.delete(`/events/${id}`);
+      toast.success('Event deleted');
+      fetchData();
+    } catch { toast.error('Error deleting event'); }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -501,7 +507,7 @@ const Events = () => {
                 <table className="w-full">
                   <thead>
                     <tr>
-                      {['Event', 'Type', 'Date', 'Location', 'Assigned', 'Status'].map(h => (
+                      {['Event', 'Type', 'Date', 'Location', 'Assigned', 'Status', ''].map(h => (
                         <th key={h} className="table-header">{h}</th>
                       ))}
                     </tr>
@@ -568,6 +574,17 @@ const Events = () => {
                           <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
                             statusColors[event.status] || 'bg-[#F3F4F6] text-[#374151]'
                           }`}>{event.status}</span>
+                        </td>
+
+                        {/* Delete button */}
+                        <td className="table-cell" onClick={e => e.stopPropagation()}>
+                          <button
+                            onClick={e => handleDelete(e, event.id)}
+                            className="p-1.5 text-[#9CA3AF] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete event"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </td>
                       </tr>
                     ))}
