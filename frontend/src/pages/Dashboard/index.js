@@ -345,6 +345,53 @@ const VirtualCalendar = ({ calendar }) => {
   );
 };
 
+const ActivityPanel = ({ activity, getActivityStyle, getActivityLabel }) => {
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? activity : activity.slice(0, 3);
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-[#111827]">Recent Activity</h2>
+        {activity.length > 0 && (
+          <button
+            onClick={() => setShowAll(v => !v)}
+            className="text-xs bg-[#1F4D3E] text-white px-2.5 py-1 rounded-full hover:bg-[#163d30] transition-colors"
+          >
+            {showAll ? 'Show less' : `Latest (${activity.length}) notifications`}
+          </button>
+        )}
+      </div>
+      <div className="space-y-3">
+        {activity.length === 0 ? (
+          <p className="text-[#9CA3AF] text-sm text-center py-8">No recent activity</p>
+        ) : visible.map(item => {
+          const activityStyle = getActivityStyle(item.type);
+          return (
+            <div key={item.id} className="rounded-2xl border border-[#E5E7EB] bg-white p-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#F3F4F6] text-[#1F4D3E]">
+                  {activityStyle.icon}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <p className="text-sm font-semibold text-[#111827] truncate">{item.title}</p>
+                    <span className="text-[11px] text-[#9CA3AF] whitespace-nowrap">{format(new Date(item.created_at), 'MMM d, h:mm a')}</span>
+                  </div>
+                  <p className="text-xs text-[#6B7280] mt-1 leading-5">{item.message}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[#6B7280]">
+                    <span className="rounded-full bg-[#F3F4F6] px-2 py-1 text-[#374151]">By {item.user_name || 'System'}</span>
+                    <span className={`rounded-full px-2 py-1 ${activityStyle.badge}`}>{getActivityLabel(item.type)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [schedule, setSchedule] = useState([]);
@@ -384,6 +431,20 @@ const Dashboard = () => {
     { title: 'Assessments', value: metrics?.assessments || 0, icon: ClipboardList, color: 'warning' },
   ];
 
+  const activityTypeStyles = {
+    alert: { badge: 'bg-red-50 text-red-700', icon: <AlertCircle size={14} className="text-red-500" /> },
+    success: { badge: 'bg-emerald-50 text-emerald-700', icon: <Check size={14} className="text-emerald-500" /> },
+    info: { badge: 'bg-sky-50 text-sky-700', icon: <Activity size={14} className="text-sky-500" /> },
+    update: { badge: 'bg-slate-50 text-slate-700', icon: <Activity size={14} className="text-slate-500" /> },
+  };
+
+  const getActivityStyle = (type) => activityTypeStyles[type] || activityTypeStyles.update;
+
+  const getActivityLabel = (type) => {
+    if (!type) return 'Update';
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  };
+
   return (
     <Layout title="Dashboard">
       <div className="space-y-6">
@@ -412,15 +473,17 @@ const Dashboard = () => {
                 <div className="space-y-0">
                   {schedule.map((appt, i) => {
                     const time = new Date(appt.appointment_time);
+                    const duration = appt.duration || 30;
+                    const end = new Date(time.getTime() + duration * 60000);
                     const isNow = (() => {
                       const now = new Date();
-                      const end = new Date(time.getTime() + (appt.duration || 30) * 60000);
                       return now >= time && now <= end;
                     })();
-                    const isPast = new Date() > new Date(time.getTime() + (appt.duration || 30) * 60000);
-                    const dotColor = appt.status === 'done' ? 'bg-emerald-500'
-                      : appt.status === 'in-progress' || isNow ? 'bg-[#1F4D3E]'
-                      : appt.status === 'cancelled' ? 'bg-red-400'
+                    const isPast = new Date() > end;
+                    const effectiveStatus = (appt.status === 'scheduled' && isPast) ? 'completed' : appt.status;
+                    const dotColor = effectiveStatus === 'done' || effectiveStatus === 'completed' ? 'bg-emerald-500'
+                      : effectiveStatus === 'in-progress' || isNow ? 'bg-[#1F4D3E]'
+                      : effectiveStatus === 'cancelled' ? 'bg-red-400'
                       : isPast ? 'bg-[#D1D5DB]'
                       : 'bg-[#F59E0B]';
                     return (
@@ -463,10 +526,12 @@ const Dashboard = () => {
                                 <span className="mx-1">·</span>
                                 {appt.type}
                                 <span className="mx-1">·</span>
-                                {appt.duration || 30} min
+                                {format(time, 'h:mm a')} - {format(end, 'h:mm a')}
+                                <span className="mx-1">·</span>
+                                {duration} min
                               </p>
                             </div>
-                            <StatusBadge status={appt.status} />
+                            <StatusBadge status={effectiveStatus === 'done' ? 'completed' : effectiveStatus} />
                           </div>
                         </div>
                       </div>
@@ -477,23 +542,7 @@ const Dashboard = () => {
             )}
           </div>
 
-          <div className="card p-5">
-            <h2 className="text-base font-semibold text-[#111827] mb-4">Recent Activity</h2>
-            <div className="space-y-3">
-              {activity.length === 0 ? (
-                <p className="text-[#9CA3AF] text-sm text-center py-8">No recent activity</p>
-              ) : activity.map(item => (
-                <div key={item.id} className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-[#1F4D3E] rounded-full mt-1.5 shrink-0" />
-                  <div>
-                    <p className="text-sm text-[#111827] font-medium">{item.title}</p>
-                    <p className="text-xs text-[#6B7280]">{item.message}</p>
-                    <p className="text-xs text-[#9CA3AF] mt-0.5">{format(new Date(item.created_at), 'MMM d, h:mm a')}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ActivityPanel activity={activity} getActivityStyle={getActivityStyle} getActivityLabel={getActivityLabel} />
         </div>
 
         <VirtualCalendar calendar={calendar} />

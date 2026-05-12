@@ -45,6 +45,14 @@ const getDoctorPerformanceIndex = async (req, res) => {
   try {
     const { recalculateDoctorPoints } = require('../services/performanceService');
 
+    // Auto-complete past scheduled appointments before recalculating
+    await pool.query(`
+      UPDATE appointments
+      SET status = 'done', updated_at = NOW()
+      WHERE status = 'scheduled'
+        AND (appointment_time + (COALESCE(duration, 30) || ' minutes')::interval) < NOW()
+    `);
+
     // Recalculate all doctors' points from live DB data first
     const allDoctors = await pool.query('SELECT id FROM doctors');
     for (const doc of allDoctors.rows) {
@@ -62,6 +70,10 @@ const getDoctorPerformanceIndex = async (req, res) => {
           WHERE doctor_id = d.id AND status = 'done'
         )                                                   AS sessions_completed,
         (
+          SELECT COUNT(*) FROM appointments
+          WHERE doctor_id = d.id AND status = 'done'
+        )                                                   AS appointments_completed,
+        (
           SELECT COALESCE(AVG(rating), 0) FROM feedback
           WHERE doctor_id = d.id
         )                                                   AS feedback_score,
@@ -73,7 +85,7 @@ const getDoctorPerformanceIndex = async (req, res) => {
           SELECT COUNT(DISTINCT ea.event_id)
           FROM event_assignments ea
           JOIN events ev ON ev.id = ea.event_id AND ev.status = 'completed'
-          WHERE ea.user_id = d.user_id
+          WHERE ea.doctor_id = d.id
         )                                                   AS events_participated,
         COALESCE(dp.appointment_points, 0)                 AS appointment_points,
         COALESCE(dp.event_points, 0)                       AS event_points,
@@ -92,6 +104,13 @@ const getDoctorPerformanceIndex = async (req, res) => {
 
 const getCompletedAppointmentsChart = async (req, res) => {
   try {
+    // Auto-complete past scheduled appointments
+    await pool.query(`
+      UPDATE appointments
+      SET status = 'done', updated_at = NOW()
+      WHERE status = 'scheduled'
+        AND (appointment_time + (COALESCE(duration, 30) || ' minutes')::interval) < NOW()
+    `);
     const result = await pool.query(`
       SELECT d.full_name as doctor,
         COUNT(CASE WHEN a.status = 'done' THEN 1 END) as completed
@@ -120,8 +139,16 @@ const getSessionTrends = async (req, res) => {
       groupBy = "TO_CHAR(appointment_time, 'DD Mon')";
       dateFilter = "appointment_time >= NOW() - INTERVAL '30 days'";
     }
+    // Auto-complete past scheduled appointments before computing trends
+    await pool.query(`
+      UPDATE appointments
+      SET status = 'done', updated_at = NOW()
+      WHERE status = 'scheduled'
+        AND (appointment_time + (COALESCE(duration, 30) || ' minutes')::interval) < NOW()
+    `);
     const result = await pool.query(`
-      SELECT ${groupBy} as period, COUNT(*) as sessions,
+      SELECT ${groupBy} as period,
+        COUNT(*) as sessions,
         COUNT(CASE WHEN status = 'done' THEN 1 END) as completed,
         COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled
       FROM appointments WHERE ${dateFilter}

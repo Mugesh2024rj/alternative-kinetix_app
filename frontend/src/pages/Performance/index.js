@@ -106,13 +106,21 @@ const Performance = () => {
 
         <div className="card p-5">
           <h3 className="font-semibold text-[#111827] mb-4">Completed Appointments by Doctor</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={completedAppts}>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={completedAppts} margin={{ top: 10, right: 20, left: 10, bottom: 35 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="doctor" tick={{ fill: '#6B7280', fontSize: 10 }} tickFormatter={v => v.split(' ').pop()} />
+              <XAxis
+                dataKey="doctor"
+                tick={{ fill: '#6B7280', fontSize: 11 }}
+                tickFormatter={v => v.split(' ').slice(-1)[0]}
+                interval={0}
+                angle={-35}
+                textAnchor="end"
+                height={60}
+              />
               <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} allowDecimals={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="completed" fill="#10b981" radius={[4, 4, 0, 0]} name="Completed" />
+              <Bar dataKey="completed" fill="#10b981" radius={[6, 6, 0, 0]} barSize={24} name="Completed" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -161,37 +169,49 @@ const Performance = () => {
             <table className="w-full">
               <thead className="border-b border-[#E5E7EB]">
                 <tr>
-                  {['Doctor', 'Specialty', 'Sessions', 'Completed Appts', 'Events', 'Appt Pts', 'Event Pts', 'Feedback Pts', 'Penalty', 'Total Points', 'Trend'].map(h => (
+                  {['#', 'Doctor', 'Specialty', 'Sessions', 'Completed Appts', 'Events', 'Appt Pts', 'Event Pts', 'Feedback Pts', 'Penalty', 'Total Points', 'Trend'].map(h => (
                     <th key={h} className="table-header">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {doctorIndex.map(doc => {
+                {[...doctorIndex].sort((a, b) => (parseInt(b.total_points) || 0) - (parseInt(a.total_points) || 0)).map((doc, idx) => {
                   const total = parseInt(doc.total_points) || 0;
-                  const trend = total > 100 ? 'up' : total > 40 ? 'neutral' : 'down';
+                  const rank = idx + 1;
+                  const rankBadge = rank === 1
+                    ? { bg: 'bg-yellow-50 border-yellow-300', label: '🥇', row: 'bg-yellow-50' }
+                    : rank === 2
+                    ? { bg: 'bg-gray-100 border-gray-300', label: '🥈', row: 'bg-gray-50' }
+                    : rank === 3
+                    ? { bg: 'bg-orange-50 border-orange-300', label: '🥉', row: 'bg-orange-50' }
+                    : { bg: '', label: rank, row: '' };
                   return (
-                    <tr key={doc.id} className="table-row">
-                      <td className="table-cell font-medium text-[#111827]">{doc.full_name}</td>
+                    <tr key={doc.id} className={`table-row ${rankBadge.row}`}>
+                      <td className="table-cell">
+                        {rank <= 3
+                          ? <span className="text-base">{rankBadge.label}</span>
+                          : <span className="text-xs text-[#9CA3AF]">{rank}</span>}
+                      </td>
+                      <td className="table-cell font-medium text-[#111827]">
+                        {rank <= 3 ? <span className="font-bold">{doc.full_name}</span> : doc.full_name}
+                      </td>
                       <td className="table-cell text-[#374151]">{doc.specialisation}</td>
                       <td className="table-cell text-[#374151]">{doc.sessions_completed}</td>
-                      <td className="table-cell text-[#374151]">{parseInt(doc.appointment_points || 0) / 10}</td>
+                      <td className="table-cell text-[#374151]">{doc.appointments_completed || 0}</td>
                       <td className="table-cell text-[#374151]">{doc.events_participated || 0}</td>
                       <td className="table-cell text-emerald-600">+{doc.appointment_points || 0}</td>
                       <td className="table-cell text-blue-600">+{doc.event_points || 0}</td>
                       <td className="table-cell text-amber-600">+{doc.feedback_points || 0}</td>
                       <td className="table-cell text-red-600">-{doc.penalty_points || 0}</td>
                       <td className="table-cell">
-                        <span className={`font-bold text-sm ${total > 100 ? 'text-emerald-600' : total > 40 ? 'text-[#B45309]' : 'text-red-600'}`}>
+                        <span className={`font-bold text-sm ${total > 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                           {total}
                         </span>
                       </td>
                       <td className="table-cell">
-                        {trend === 'up'
+                        {total > 0
                           ? <TrendingUp size={16} className="text-emerald-600" />
-                          : trend === 'down'
-                            ? <TrendingDown size={16} className="text-red-500" />
-                            : <span className="text-[#9CA3AF]">—</span>}
+                          : <TrendingDown size={16} className="text-red-500" />}
                       </td>
                     </tr>
                   );

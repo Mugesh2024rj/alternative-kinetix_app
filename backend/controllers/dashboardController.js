@@ -29,6 +29,13 @@ const getDashboardMetrics = async (req, res) => {
 
 const getTodaySchedule = async (req, res) => {
   try {
+    // Auto-complete past scheduled appointments
+    await pool.query(`
+      UPDATE appointments
+      SET status = 'done', updated_at = NOW()
+      WHERE status = 'scheduled'
+        AND (appointment_time + (COALESCE(duration, 30) || ' minutes')::interval) < NOW()
+    `);
     const result = await pool.query(`
       SELECT a.id, a.appointment_time, a.type, a.status, a.duration,
              p.full_name as patient_name, d.full_name as doctor_name
@@ -47,10 +54,53 @@ const getTodaySchedule = async (req, res) => {
 const getRecentActivity = async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT n.id, n.title, n.message, n.type, n.created_at, u.full_name as user_name
-      FROM notifications n
-      LEFT JOIN users u ON n.user_id = u.id
-      ORDER BY n.created_at DESC LIMIT 10
+      SELECT id, title, message, type, created_at, user_name
+      FROM (
+        SELECT n.id, n.title, n.message, n.type, n.created_at,
+               COALESCE(u.full_name, 'System') AS user_name
+        FROM notifications n
+        LEFT JOIN users u ON n.user_id = u.id
+
+        UNION ALL
+
+        SELECT 1000000 + a.id AS id,
+               CONCAT('Completed appointment - ', p.full_name) AS title,
+               CONCAT('Appointment for ', p.full_name, ' with ', d.full_name, ' completed at ', TO_CHAR(a.appointment_time, 'HH12:MI AM')) AS message,
+               'success' AS type,
+               COALESCE(a.updated_at, a.appointment_time, NOW()) AS created_at,
+               COALESCE(d.full_name, 'System') AS user_name
+        FROM appointments a
+        LEFT JOIN patients p ON a.patient_id = p.id
+        LEFT JOIN doctors d ON a.doctor_id = d.id
+        WHERE a.status = 'done'
+
+        UNION ALL
+
+        SELECT 2000000 + e.id AS id,
+               CONCAT('Completed event - ', e.title) AS title,
+               CONCAT('Event "', e.title, '" completed at ', TO_CHAR(COALESCE(e.end_date, e.event_date), 'HH12:MI AM')) AS message,
+               'info' AS type,
+               COALESCE(e.updated_at, COALESCE(e.end_date, e.event_date), NOW()) AS created_at,
+               COALESCE(u.full_name, 'System') AS user_name
+        FROM events e
+        LEFT JOIN users u ON e.created_by = u.id
+        WHERE e.status = 'completed'
+
+        UNION ALL
+
+        SELECT 3000000 + asmt.id AS id,
+               CONCAT('Assessment completed - ', asmt.title) AS title,
+               CONCAT('Assessment ', COALESCE(asmt.title, 'Review'), ' for ', COALESCE(p.full_name, 'patient'), ' completed by ', COALESCE(d.full_name, 'System')) AS message,
+               'success' AS type,
+               COALESCE(asmt.completed_date, asmt.updated_at, asmt.created_at, NOW()) AS created_at,
+               COALESCE(d.full_name, 'System') AS user_name
+        FROM assessments asmt
+        LEFT JOIN patients p ON asmt.patient_id = p.id
+        LEFT JOIN doctors d ON asmt.doctor_id = d.id
+        WHERE asmt.status = 'completed'
+      ) feed
+      ORDER BY created_at DESC
+      LIMIT 10
     `);
     res.json(result.rows);
   } catch (err) {
